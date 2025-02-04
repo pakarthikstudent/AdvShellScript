@@ -1,0 +1,1205 @@
+File Test Operators
+--------------------
+ |->File Types and File mode(operation)
+		   ---------------------------------------
+file <filename>		|->read  |->write   |->execute
+----
+ |->determine the file type
+
+File Types
+-------------
+1.Regular File (or) Ordinary file
+  --------------------------------
+  |->ASCII / TEXT    - user can able to read/understand (ex: p1.java p1.c p1.txt ..)
+  |->ELF (object File)     - user can't able to read/understand (ex: /bin/<commands> )	
+								gcc -o p1 p1.c       
+									| -----//ASCII
+									ELF
+
+2. Directory
+
+3. LinkFile <or> Softlink <or> symbolic link   # ln -s <source> <target>
+
+4. Character type device - ex: keyboard, terminal
+5. Block type device    - ex: storage devices
+
+6. named pipe <or> FIFO 
+7. socket file
+
+File Test Operators
+--------------------
+Reg.file =>   -f    
+Directory file =>   -d
+
+link file  => -h
+character type device file =>  -c
+block type device file  ==>   -b
+named pipe => -p
+Socket file => -S
+
+read mode => -r
+write mode => -w
+execute mode => -x
+
+Syntax:-
+-----------
+[<space><FileTestOperator><space><inputFile><space>]
+
+[ -f p1.log ] <== Test file p1.log is regular file or not
+
+[ -d demo ] <== Test file demo is a directory file or not
+
+[ -c /dev/null ] <== Test file /dev/null is a character type device file or not
+
+[ -b /dev/fd1 ] <== Test file /dev/fd1 is a block type device file or not
+
+[ -r fileA.log ] <== Test fileA.log is a readable file or not
+
+[ -w fileA.log ] <== Test fileA.log is a writeable file or not
+
+[ -x p1.sh ] <== Test p1.sh file is executable or not
+
+
+[ -e <filename> ] 
+   |________________ Test input file is existing or not
+
+
+
+#test -e /etc/passwd; echo $?
+0
+#test -e /etc ; echo $?
+0
+#test -e /dev/null ; echo $?
+0
+#test -e pp.log ;echo $?
+1
+#test -e passwd;echo $?
+1
+#test -f /etc/passwd ;echo $?
+0
+#test -f /etc ;echo $?
+1
+#test -d /etc ;echo $?
+0
+#test -d /etc/passwd ;echo $?
+1
+#[ -d /dev ] ;echo $?
+0
+#[ -x /etc/passwd ] ;echo $?
+1
+#
+################################################################
+
+Write a shell script
+|
+|-> read a file name from <STDIN>
+ -> test - input file is existing or not
+				|     
+			      use file command  - determine the file type
+
+read -p "Enter a file name:" fname
+
+if [ -e $fname ]
+then
+     echo "Yes input file:$fname is exists"
+     file $fname
+else
+     echo "Sorry file:$fname is not exists"
+fi
+
+Write a shell script
+|
+|-> read a file name from <STDIN>
+ -> test - input file is existing or not
+				|
+				|->Test - input file is reg.file or not
+							|_  ls -l <filename>
+
+				|->Test - input file is directory file or not
+							--------------
+							 |_  ls -ld <directoryName>
+
+			        |->use file command  - determine the file type
+
+
+
+read -p "Enter a file name:" fname
+
+if [ -e $fname ]
+then
+     if [ -f $fname ]
+     then
+   echo "Yes Given Input file $fname is a reg.file"
+   ls -l $fname
+     elif [ -d $fname ]
+     then
+   echo "Input file $fname is a directory file"
+   ls -ld $fname
+     else
+         echo "Yes input file:$fname is exists"
+         file $fname
+     fi
+else
+     echo "Sorry file:$fname is not exists"
+fi
+
+
+#ls -l
+total 8
+-rwxr-xr-x. 1 root root 173 Feb  4 10:10 p1
+-rwxr-xr-x. 1 root root 398 Feb  4 10:13 p2
+#
+#mkdir D1
+#cp p1 D1/pa
+#cp p2 D1/pb
+#
+#
+#
+#ls -l
+total 8
+drwxr-xr-x. 2 root root  26 Feb  4 10:17 D1
+-rwxr-xr-x. 1 root root 173 Feb  4 10:10 p1
+-rwxr-xr-x. 1 root root 398 Feb  4 10:13 p2
+#
+#ls -l p1
+-rwxr-xr-x. 1 root root 173 Feb  4 10:10 p1
+#ls -l p2
+-rwxr-xr-x. 1 root root 398 Feb  4 10:13 p2
+#
+#ls -l D1
+total 8
+-rwxr-xr-x. 1 root root 173 Feb  4 10:17 pa
+-rwxr-xr-x. 1 root root 398 Feb  4 10:17 pb
+#
+#ls -ld D1
+drwxr-xr-x. 2 root root 26 Feb  4 10:17 D1
+#
+#ls -ld /etc
+drwxr-xr-x. 78 root root 8192 Feb  4 08:58 /etc
+#ls -ldh /etc
+drwxr-xr-x. 78 root root 8.0K Feb  4 08:58 /etc
+
+Write a shell script
+|
+read a filename from <STDIN>
+test inputfile is reg.file or not
+		    |		|->exit from script
+		    |
+		   read a search pattern from <STDIN>
+		   use grep command - search pattern 
+			    - if pattern is not matched - display suitable message
+				....................................................
+
+read -p "Enter a file name:" fname
+
+if ! [ -f $fname ];then
+	echo "Usage:Sorry file $fname is not a reg.file"
+	exit
+fi
+
+read -p "Enter a search pattern:" key
+
+grep $key $fname
+
+if [ $? -ne 0 ];then
+     echo "Usage:Sorry given pattern $key is not matched from $fname file"
+fi
+#######################################################################################
+command line -> bash -x p1.sh
+		================
+
+Inside the script
+set -x 
+...
+...
+...
+set +x 
+#######################################################################################
+case statement
+-------------
+ |->Conditional statement
+    ......................
+	|->Code block - execution is only one time
+
+Syntax:-
+---------
+
+case variable in
+pattern1)  pattern1 operation ;;
+pattern2)  pattern2 operation
+		;;
+pattern3)  pattern3 operation
+		;;
+..
+patternN)  patternN operation
+		;;
+*)      default operation
+esac
+
+# case in esac - keywords
+# --------------------------
+
+
+if [ $port -gt 500 -a $port -lt 600 ]
+then
+	case $pattern in
+	pattern1)    ....  ;;
+	pattern2)    ....  ;;
+	...
+	patternN)    ...   ;;
+	*)	default
+	esac
+
+else
+	case $pattern in
+	pattern1)  if [ condition ]
+		   then
+			...
+		   else
+			...
+		   fi
+			;;
+	pattern2)  ..
+		   ;;
+	  *) 	..
+	esac 
+
+fi
+###############################################################################
+Looping statements
+--------------------
+|->Code block - execute more than one time
+   ..........
+	1. Conditional style loop - based on the condition
+	2. Collection style loop  - based on the <no.of items>
+						   ..........
+
+	1. Conditional style loop - based on the condition
+	----------------------------------------------------
+	while ; until //keywords
+
+Syntax:-
+----------
+initialization <== Step 1
+		
+while<space>[  condition ] <== Step 2
+do
+	<code block>
+	Arithmetic <== Step 3
+done
+
+# while do done - keywords
+# --------------------------
+
+#uptime
+ 11:26:32 up  2:29,  3 users,  load average: 0.00, 0.01, 0.05
+#
+#sleep 3
+#uptime
+ 11:26:46 up  2:29,  3 users,  load average: 0.00, 0.01, 0.05
+#
+#i=0
+#while [ $i -lt 5 ]
+> do
+> uptime
+> sleep 3
+> i=`expr $i + 1`
+> done
+ 11:27:29 up  2:30,  3 users,  load average: 0.00, 0.01, 0.05
+ 11:27:32 up  2:30,  3 users,  load average: 0.00, 0.01, 0.05
+ 11:27:35 up  2:30,  3 users,  load average: 0.00, 0.01, 0.05
+ 11:27:38 up  2:30,  3 users,  load average: 0.00, 0.01, 0.05
+ 11:27:41 up  2:30,  3 users,  load average: 0.00, 0.01, 0.05
+#
+#echo $i
+5
+#[ $i -lt 5 ];echo $?
+1
+#
+
+
+Write a shell script
+|
+read a login from <STDIN>
+|
+test input login name is userA or not
+			 |	   |->Try-again
+			login is matched
+
+maximum input limit is 5
+		      ---
+
+c=0
+while [ $c -lt 5 ]
+do
+	c=`expr $c + 1`
+	
+	read -p "Enter a login name:" name
+	if [ "$name" == "userA" ];then
+		echo "Login is matched"
+	else
+		echo "Try-Again"
+	fi	
+done
+#####################################################################
+
+break - exit from looping statement
+|
+continue - ignore current iteration continue the loop
+........
+ |->looping keywords
+--------------------------------------------------------
+
+while<space>:
+do
+	<always true>
+done
+
+--------------------------------------------
+until loop
+----------
+opp.while loop is until loop
+		  -----
+while ! [ condition ]  ==> same as until loop
+do				   -----
+	<code block>
+done
+
+
+#n=15
+#
+#[ $n -lt 10 ];echo $?
+1
+#while [ $n -lt 10 ]
+> do
+> echo "OK"
+> done
+#
+#until [ $n -lt 10 ]
+> do
+> echo "n value is:$n"
+> n=`expr $n - 1`
+> done
+n value is:15
+n value is:14
+n value is:13
+n value is:12
+n value is:11
+n value is:10
+#echo $n
+9
+#[ 9 -lt 10 ];echo $?
+0
+#
+
+############################################################
+
+2. Collection style loop  - based on the <no.of items>
+-------------------------
+ |-> for loop
+
+Syntax:-
+---------
+for variable in <Collection>
+do
+	<code block>
+done
+
+# for in do done - keywords
+# --------------
+
+#for var in 10 ABC T % data
+> do
+> echo "var value is:$var"
+> done
+var value is:10
+var value is:ABC
+var value is:T
+var value is:%
+var value is:data
+#
+#for var in RHL5 OL 7.9 "Oracle Linux 8.3 Server"
+> do
+> echo "var value is:$var"
+> done
+var value is:RHL5
+var value is:OL
+var value is:7.9
+var value is:Oracle Linux 8.3 Server
+#
+-------------------------------------------------------------------
+select loop
+------
+ |->collection style loop
+ |->menu driven programming
+ |->always running
+ |-> #? <== PS3 prompt
+     --
+
+Syntax:-
+---------
+select variable in <collection>
+do
+	<code block>
+done
+# select in do done - keywords
+# -----------------------------
+
+
+[root@krosumlabs DAY2]#
+[root@krosumlabs DAY2]# echo $PS1
+[\u@\h \W]\$
+[root@krosumlabs DAY2]#
+[root@krosumlabs DAY2]# echo "
+>
+> "
+
+
+
+[root@krosumlabs DAY2]# echo $PS2
+>
+[root@krosumlabs DAY2]# echo $PS4
++
+[root@krosumlabs DAY2]# echo $PS3
+
+[root@krosumlabs DAY2]# clear
+[root@krosumlabs DAY2]#
+[root@krosumlabs DAY2]#
+[root@krosumlabs DAY2]# for var in D1 D2 D3
+> do
+> echo "var value is:$var"
+> done
+var value is:D1
+var value is:D2
+var value is:D3
+[root@krosumlabs DAY2]# select var in D1 D2 D3
+> do
+> echo "var value is:$var"
+> done
+1) D1
+2) D2
+3) D3
+#? 1
+var value is:D1
+#? 2
+var value is:D2
+#? 3
+var value is:D3
+#? 4
+var value is:
+#? 67890
+var value is:
+#? ^C
+[root@krosumlabs DAY2]#
+-----------------------------------------------------------------
+In Shell script => menu driven programming => select + case 
+-----------------------------------------------------------------
+
+select variable in menu1 menu2 menu3 menu4
+do
+	case $varaible in
+	menu1)  menu1 operation ;;
+	menu2)  menu2 operation ;;
+	menu3)  menu3 operation ;;
+	..
+	menuN)  menuN operation ;;
+	*)	default operation
+	esac
+done
+
+
+#######
+
+while ------//conditional 
+until  <===================== while ! [ ]
+for --------//collection
+select <----------------------- while :
+				do
+					...
+				done
+--------------------------------------------------------------------------------------
+File Handling
+--------------
+
+Keyboard<STDIN>---<----read-------Script--------echo------>----Monitor(STDOUT)
+				==========
+				    |
+				    |
+				  <file>(storage)
+
+
+1. read data from <FILE> - to script - display to monitor
+
+2. script -> create a new file and write data to FILE
+
+3. read data from <oneFILE> - to script - create a new file and write data to anotherFILE
+
+
+while loop + redirection symbols
+		< - read
+		> - create and write
+		>> - append
+
+
+1. read data from <FILE> - to script - display to monitor
+--------------------------------------------------------------
+Syntax:-
+---------
+while read var
+do     -------(2)--
+     <code block> ----(3)--
+
+done<inputFile
+      ---(1)--
+
+
+
+[root@krosumlabs DAY2]# read var
+data1
+[root@krosumlabs DAY2]# echo "-->$var"
+-->data1
+[root@krosumlabs DAY2]# while read var
+> do
+> echo "--->$var"
+> done
+data1
+--->data1
+data2
+--->data2
+data3
+--->data3
+
+
+
+[root@krosumlabs DAY2]# ps|while read var
+> do
+> echo "-->$var"
+> done
+-->PID TTY          TIME CMD
+-->1262 pts/1    00:00:00 bash
+-->1899 pts/1    00:00:00 ps
+-->1900 pts/1    00:00:00 bash
+[root@krosumlabs DAY2]# cat emp.csv |while read var
+> do
+> echo "--->$var<---"
+> done
+--->101,raj,sales,pune,1000<---
+--->102,leo,prod,bglore,2000<---
+--->450,raj,prod,pune,2340<---
+--->590,anu,HR,bglore,3123<---
+--->894,sai,sales,bglore,3421<---
+--->849,anu,prod,noida,4923<---
+--->324,shan,sales,hyd,8900<---
+--->569,kumar,prod,pune,8903<---
+--->634,karthik,sales,bglore,3890<---
+--->784,theeb,Hr,chennai,7892<---
+--->734,rao,hr,hyd,8923<---
+--->456,arun,sales,mumbai,8923<---
+[root@krosumlabs DAY2]#
+
+[root@krosumlabs DAY2]# while read var
+> do
+> echo "===>$var"
+> done<emp.csv
+
+===>101,raj,sales,pune,1000
+===>102,leo,prod,bglore,2000
+===>450,raj,prod,pune,2340
+===>590,anu,HR,bglore,3123
+===>894,sai,sales,bglore,3421
+===>849,anu,prod,noida,4923
+===>324,shan,sales,hyd,8900
+===>569,kumar,prod,pune,8903
+===>634,karthik,sales,bglore,3890
+===>784,theeb,Hr,chennai,7892
+===>734,rao,hr,hyd,8923
+===>456,arun,sales,mumbai,8923
+[root@krosumlabs DAY2]#
+
+
+2. script -> create a new file and write data to FILE
+--------------------------------------------------------
+
+while read var
+do
+	code block
+done >newFile
+     ========
+
+command >newFile
+-------
+
+i=0
+while [ $i -lt 5 ]
+do
+    uptime
+    sleep 1
+    ps -f
+    sleep 1
+    i=`expr $i + 1`
+done >r1.log
+
+
+[root@krosumlabs DAY2]# cat p14
+while read -p "Enter some text:" var
+do
+        echo "$var"
+done >r2.log
+[root@krosumlabs DAY2]# ./p14
+Enter some text:test data1
+Enter some text:test data2
+Enter some text:sample data3
+Enter some text:[root@krosumlabs DAY2]#
+[root@krosumlabs DAY2]#
+[root@krosumlabs DAY2]# cat r2.log
+test data1
+test data2
+sample data3
+[root@krosumlabs DAY2]#
+
+
+
+i=0
+while [ $i -lt 3 ]
+do
+   ps -f
+   sleep 1  
+   uptime
+   sleep 2
+   df -Th
+   sleep 1
+   free -m
+   i=`expr $i + 1`
+done
+	Vs
+i=0
+while [ $i -lt 3 ]
+do
+   ps -f
+   sleep 1  
+   uptime
+   sleep 2
+   df -Th
+   sleep 1
+   free -m
+   i=`expr $i + 1`
+done >r1.log
+     ---------
+	Vs
+i=0
+while [ $i -lt 3 ]
+do
+   ps -f    >>process.log
+   sleep 1  
+   uptime   >>LB.log
+   sleep 2
+   df -Th   >>fs.log
+   sleep 1
+   free -m  >>memory.log
+   i=`expr $i + 1`
+done
+
+############################################################################
+
+3. read data from <oneFILE> - to script - create a new file and write data to anotherFILE
+		   
+read a inputFile from <STDIN>
+- validation: test input file must be a reg.file 
+
+result file should not exists
+- validation: test result file is already exists or not
+					   |->exit  ====
+						      |->create a newFile
+
+do write operation
+....................
+
+while read var
+do	-------(2)
+
+  <Code Block>--(3)
+
+done<inputfile  >resultfile
+      (1)         (4)
+------------------------------------------------------------------------------------
+
+read -p "Enter a input File:" fname
+
+if ! [ -f $fname ]
+then
+	echo "Usage:Sorry file $fname is not a reg.file"
+	exit
+fi
+
+read -p "Enter a result file:" wfname
+
+if [ -e $wfname ]
+then
+	echo "Usage:Sorry file $wfname is already exists"
+	exit
+fi
+
+while read var
+do	
+  echo "$var"
+done<$fname  >$wfname
+
+######################################################################################
+
+
+Q1. Write a shell script
+    ------------------
+
+  Initialize a pin number (ex: pin=1234)
+  |
+  use while loop - limit is 3
+       |->read a pin number from <STDIN>
+       |->test input pin with an existing pin
+	       -------------------------------
+		  |-> pin is matched - count
+
+       |->if all 3 inputs are failed - pin is blocked.
+
+
+pin=1234
+c=0
+
+while [ $c -lt 3 ]
+do
+     c=`expr $c + 1`
+     read -p "Enter a pin Number:" PIN
+     if [ $pin -eq $PIN ];then
+	echo "Success - pin is matched - $c"
+	break
+     fi
+done
+
+if [ $pin -ne $PIN ];then
+        echo "Sorry your pin blocked"
+fi
+
+
+
+
+Q2. Write a shell script
+    
+    |->create a new file (pin_history.log)
+       |
+      append user input pin details (Success;Failed)
+      to pin_history.log file
+  
+    |->update date/time and pin details to pin_history.log
+       file.
+
+
+pin=1234
+c=0
+
+while [ $c -lt 3 ]
+do
+  c=`expr $c + 1`
+  read -p "Enter a pin Number:" PIN
+  if [ $pin -eq $PIN ];then
+    echo "Success - pin is matched - $c  entry time:`date`" >>pin_history.log
+    echo "Success - pin is matched - $c"
+    break
+  else
+    echo "Failed - Input pin $PIN is not matched entry time:`date`" >>pin_history.log
+  fi
+done
+if [ $pin -ne $PIN ];then
+        echo "Sorry your pin blocked"
+        echo "Sorry your pin blocked - updated on `date`" >>pin_history.log
+fi
+----------------------------------------------------------------------------------
+
+file: cmds.txt
+----------------
+date
+uname -rs
+uptime
+sleep 3
+ps
+----------------
+
+Write a shell script
+
+ |->read cmds.txt file - line by line
+	|->execute each command 
+			 |->results - append to external log file
+		
+---------------------
+
+while read var
+do
+   echo "command:$var
+   Results:`$var`"
+done<cmds.txt >r1.log
+----------------------------------------
+
+cat -n emp.csv
+
+<lineNumber>  <field1>,<field2>,<filed3>,<filed4>,<field5>
+------------  =============================================
+count=0
+
+while read var
+do
+   count=`expr $count + 1`
+   echo "$count  $var"
+done<emp.csv
+-----------------------------------//cat -n emp.csv 
+
+ls {Enter}  ->input to for loop ->iteration
+
+1. p1.sh
+2. p2.sh
+3. p3.sh
+
+count=0
+
+while read var
+do
+   count=`expr $count + 1`
+   echo "$count  $var"
+done<emp.csv
+-----------------------------------------------------
+echo "List of files:-"
+echo "---------------------"
+count=0
+for var in `ls p*`
+do
+      count=`expr $count + 1`
+      echo "$count $var"
+done
+--------------------------------------------------------------------------------------
+
+
+file: packages.txt
+--------------------
+ksh
+zsh
+httpd
+python3
+irb
+--------------------
+
+Write a shell script:
+
+ \__ read a packages.txt file - line by line
+ \__ test package is installed or not
+			|	   |
+		       (A)	   (B)
+	
+(B) -> install a package - display message to monitor (also append to file)                   
+				 (Success;Failed)   
+		 
+(A) -> rpm -qi <package> - display package info
+
+Note: execution user must be a root user.
+-----------------------------------------------------------------------------------
+
+
+
+if ! [ `whoami` == "root" ]
+then
+   echo "Usage:Sorry your not root user"
+   exit
+fi
+
+while read var
+do
+    rpm -q $var >>r1.log 2>&1
+    if [ $? -eq 0 ];then
+         echo "Package $var already installed"
+         echo "About $var package details:-"
+         rpm -qi $var
+         echo # empty line
+         sleep 1
+    else
+         yum -y install $var >>r2.log 2>&1
+         if [ $? -eq 0 ];then
+                echo "Package $var installation is done"
+         else
+                echo "Package $var installation is failed"
+                echo "Refer r2.log file"
+         fi
+    fi
+done<packages.txt
+########################################################################################
+
+
+Two character type special files
+-----------------------------------
+/dev/null
+/dev/zero
+
+/dev/zero
+-------------
+ |->increase stoage size 
+ |->data File
+
+
+dd if=/dev/zero out=pp.log count=10000 bs=1024
+--	   ----     ------
+
+/dev/null
+-----------
+ |->special file - cleanup activity
+
+[root@krosumlabs DAY2]# ping -c 3 google.com >/dev/null
+[root@krosumlabs DAY2]# echo $?
+0
+==============================================================
+
+commandline arguments
+------------------------
+ |->runtime input arguments
+
+
+root@host~]# ./p1.sh <input1> <input2> <input3> ... <inputN> {Enter}
+		    ........................................
+			|->commandline arg input
+
+ 
+ |-> positional parameters
+     .......................
+	
+root@host~]# ./p1.sh <input1> <input2> <input3> ... <inputN> {Enter}
+		    ....$1.......$2......$3............${N}....
+
+
+ Oldstyle
+--------------
+ echo $1 $2 $3 $4 $5 $6 $7 $8 $9
+      |__________________________|
+
+ shift N
+___________________________________________________________________________
+file: pt.sh
+----------------------------
+echo $1 $2 $3 $4 $5
+shift 3
+echo $1 $2 $3 $4 $5
+echo $1
+---------------------------
+chmod a+x pt.sh
+
+./pt.sh A B C D E F G H I J K L M N O {Enter}
+
+A B C D E
+D E F G H
+D
+___________________________________________________________________________
+
+ echo $*  (or) $@  - list of all the args
+ echo $#  - total no.of args
+
+
+
+current style
+------------------
+Nth argument from commandline => $N (or) ${N}
+
+
+echo $1   -> ${1}
+echo $2   -> ${2}
+..
+echo $9   -> ${9}
+
+echo ${10} ${11} ${15}
+	|     |     |__15th argument
+	|    11th args
+	|
+	10th argument
+
+
+echo $*  (or) $@  - list of all the args 
+echo ${*} (or) ${@} - list of all the args 
+
+echo ${#} <or> echo $#  - total no.of args
+
+------------------------------------------------------------
+In shell commandline - $0 - display current shell name (or) active shell name
+
+root@host~]# echo $0  {enter}
+-bash			
+
+root@host~]# vi p1.sh {Enter}
+echo $0
+:wq
+root@host~]# chmod a+x p1.sh
+root@host~]# ./p1.sh {enter} <== relative path
+./p1.sh
+ ----------//script file name
+
+root@host~]# /root/p1.sh {Enter} <== absolute path
+/root/p1.sh
+------------//script file name
+
+root@host~]# sh p1.sh {Enter} <==
+p1.sh
+
+In commandline -> echo $$ - display working shell PID
+In side the shell script -> echo $$ - display running script PID
+
+In commandline -> echo $PPID - display working shell parent process PID
+In side the shell script -> echo $PPID - display running script parent process PID(shell PID)
+
+---------------------------------------------------------------------
+
+								
+[root@krosumlabs DAY2]# ./p28
+./p28
+[root@krosumlabs DAY2]# /root/AdVShellScript/DAY2/p28
+/root/AdVShellScript/DAY2/p28
+[root@krosumlabs DAY2]#
+[root@krosumlabs DAY2]# sh p28
+p28
+[root@krosumlabs DAY2]# whatis basename
+basename (1)         - strip directory and suffix from filenames
+[root@krosumlabs DAY2]#
+[root@krosumlabs DAY2]# basename /L1/L2/L3/L4/L5/L6/p1.java
+p1.java
+[root@krosumlabs DAY2]# basename p1.java
+p1.java
+[root@krosumlabs DAY2]# basename ./p.sh
+p.sh
+[root@krosumlabs DAY2]#
+
+[root@krosumlabs DAY2]# cat -n p28
+     1  echo $0
+     2
+     3  fname=`basename $0`
+     4
+     5  echo "Working script filename:$fname
+     6  Script PID:$$
+     7  Parent Process PID:$PPID"
+     8
+     9
+[root@krosumlabs DAY2]# ./p28  &
+[1] 2619
+[root@krosumlabs DAY2]# ./p28
+Working script filename:p28
+Script PID:2619
+Parent Process PID:1262
+
+[1]+  Done                    ./p28
+[root@krosumlabs DAY2]# ps
+  PID TTY          TIME CMD
+ 1262 pts/1    00:00:00 bash
+ 2621 pts/1    00:00:00 ps
+[root@krosumlabs DAY2]#
+################################################################################
+
+ls <== command
+
+ls -l 
+-- -
+|  |<-option (or) flags 
+|
+command
+
+ls -l emp.csv p1.log 
+-- -- _______ _______
+	|_________|
+		|---arguments <or> parameters
+
+./p1.sh <input1> <input2>
+
+./p1.sh -h 
+./p1.sh -h <input1>
+
+
+getopts
+--------
+ |->command - helps to manage the commandline options and arguments
+
+options    =>  -<SingleCharacter>
+arguments  =>  <param1> <param2> <param3> 
+
+Syntax:-
+---------
+getopts optstring  Name [args]
+        ^^^^^^^^^
+	
+optstring - string of chars ( valid option ) -a -b -c 
+
+	    -a args
+	    -b args
+
+ex: abc  ->  -a -b -c # with out any arguments
+
+    a:bc -> -a -b -c
+	    -a <arguments> 
+    
+a:  -> -a <arg> 
+a:b: -> -a <args> -b <args>
+a:b:c 
+  -a args -b args -c 
+ 
+Name - variable - getops uses to store the current option // for processing
+----
+[args] - optional 
+
+while loop + case statement
+-----------------------------
+while getopts <optstring> <optVariable>
+do
+    case $<optVariable> in
+    <optStringChar>  ...
+    ..
+    esac
+done
+
+
+opt_string="abc"
+
+while getopts $opt_string opt
+do
+	case $opt in
+	a)  echo "Option -a was invoked" ;;
+	b)  echo "Option -b was invoked" ;;
+        *)  echo "Invalid option"
+	esac
+done
+
+
+
+opt_string="a:bc"
+
+while getopts $opt_string opt
+do
+        case $opt in
+        a)  echo "Option -a was invoked" ;;
+        b)  echo "Option -b was invoked" ;;
+        c)  echo "Option -c was invoked" ;;
+        *)  echo "Invalid option"
+        esac
+done
+---------------------------------------------------------------------------
+mkdir $1 
+./p1.sh demo  # OK
+./p1.sh <empty> //Error
+
+	Vs
+while getopts "hd:" opt
+do
+     case $opt
+     d) mkdir "$OPTARG"  ;;
+     h) echo "$0 -d <directory>" ;;
+     esac
+done
+
+./p1.sh -d demo # OK
+./p1.sh -d <empty> # getopt throw the error 
+
+./p1.sh -h {Enter}
+./p1.sh -d <directory> 
+-------------------------------------------------------------------------------------
+
+
+
+
+
+
