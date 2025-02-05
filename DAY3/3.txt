@@ -1,0 +1,1095 @@
+Recap
+------
+DAY1:  
+-----
+   user defined variable =>  variable=value 
+			     variable=`command` (or) variable=$(command)
+
+   shell variable  => export variable=value
+		      ----------------------
+   operators
+   - expr (or) $((expression))
+   - test (or) [ ] 
+   - -a -o ! (or) && ||
+  
+   conditional statement - if statement
+   ---------------------------------------
+DAY2:
+-----
+ File Types and Mode 
+ -------------------
+  ->file test operators
+  ->case statement 
+  ->looping statements 
+  ->file handling
+  ->commandline args - runtime inputs $1 $2 $3...${n} ; $@ $* ; $#
+    getopts -a -a args
+-------------------------------------------------------------------------------------
+conditional statement 		Vs	 looping statement
+- code block will execute		 - code block will execute more than one time
+  only one time
+
+- if ; case				 - while ; until; for; select
+  ---------
+
+
+
+if [ $port -eq 5000 ]		case $port in
+then				5000)  app="Flask"  ;;
+   app="Flask"			8080)  app="FastApi" ;;
+elif [ $port -eq 8080 ]	  Vs    9090)  app="Prometheus" ;;
+then                            abc) app="test" ;;
+   app="FastApi"                 *) port=8000;app="Django"
+elif [ $port -eq 9090 ]         esac
+then
+   app="Prometheus"
+elif [ "abc" == "abc" ]
+then
+   app="test"
+else
+   port=8000
+   app="Django"
+fi
+
+if [ $port -gt 5000 -a $port -lt 6000 ] --->we can't use case statement
+
+######################################################################################
+Syntax:-
+---------
+getopts optstring optvariable
+	|
+	"abc"
+	-a
+	-b
+	-c
+	-ab
+	-abc
+	-bc
+	-ca
+	
+opt_string="abc"
+
+while getopts $opt_string opt
+do
+	case $opt in
+	a)  echo "Option -a was invoked" 
+	    ls -a
+	    ps -a
+	    ;;
+	b)  echo "Option -b was invoked" ;;
+	c)  echo "Option -c was invoked" ;;
+        *)  echo "Invalid option"
+	esac
+done
+
+./p1.sh 
+./p1.sh -a 
+Option -a was invoked
+./p1.sh -b
+Option -b was invoked
+./p1.sh -c
+Option -c was invoked
+./p1.sh -bc 
+Option -b was invoked
+Option -c was invoked
+
+./p1.sh -d
+Error
+
+
+opt_string="a:bc"
+
+while getopts $opt_string opt
+do
+	case $opt in
+	a)  echo "Option -a was invoked" 
+	    ls -a
+	    ps -a
+	    ;;
+	b)  echo "Option -b was invoked" ;;
+	c)  echo "Option -c was invoked" ;;
+        *)  echo "Invalid option"
+	esac
+done
+
+./p1.sh 
+./p1.sh -a {Enter}
+Error - argument is required 
+
+./p1.sh -b {Enter}
+Option -b was invoked
+
+#################################################################################
+
+command ->result
+	   |->Single word/digit 
+ex:
+---
+whoami		var=`whoami`
+
+command ->result
+	   |->more than one word/digits/multiple lines
+
+ps		var=`ps` Vs  arr=(`ps`)
+			     ----------
+
+Array
+------
+  |->variable - holding more than one value - different types of value
+	      - each value - own address
+	      - index based
+		|->default index starts from 0 1 2 3 .. N
+					     -1 -2 -3 -4 ...0 1 2 
+		[index]
+
+Syntax:-
+---------
+arrayName=(list of items)
+
+		
+arr=(150 98.5 data T `whoami`) <== we can place different types of values
+      0    1   2   3    4   <== index
+     -5   -4   -3  -2  -1   <== index 
+
+How to fetch/get single value from an array?
+
+  ${arrayname[index]}
+
+echo ${arr[0]} -> 150
+echo ${arr[1]} -> 98.5
+
+echo ${arr[-1]} -> root
+
+echo ${arr[-2]} -> T
+
+[ ${arr[0]} -eq ${arr[-5]} ] ; echo $? ->0
+
+
+How to fetch/get list of all the items from an array?
+
+	${arrayname[@]} (or) ${arrayname[*]}
+
+echo ${arr[@]} ->150 98.5 data T root
+
+To count total no.of items?
+------------------------------
+	${#arrayname[@]} (or) ${#arrayname[*]} 
+
+a1=() 
+echo ${#a1[@]} ->0
+
+a2=(D1 D2)
+echo ${#a2[@]} ->2
+
+a3=(1 2 3)
+echo ${#a3[@]} ->3
+
+
+os="unix Linux minix winx"     
+   ------------------------//0x1234
+
+
+os=(unix Linux minix winx)
+     |     |    |     |
+     0     1    2     3 <== index
+   0x123  0x33 0x55  0x423 <== address
+
+array is mutable 
+
+os[1]="OracleLinux7.9" # we can modify an existing array item
+  
+echo ${os[@]}
+unix OracleLinux7.9 minix winx
+
+unset arrayname[index] - we can delete nth index
+
+unset arrayname[@] -  we can delete entire items
+
+# To add new data to an array
+
+arrayname[New_index]=value
+
+######################################################################
+[root@krosumlabs DAY3]# grep bash /etc/passwd
+root:x:0:0:root:/root:/bin/bash
+student:x:1000:1000:student:/home/student:/bin/bash
+userA:x:1001:1001::/home/userA:/bin/bash
+[root@krosumlabs DAY3]#
+[root@krosumlabs DAY3]# V=`grep bash /etc/passwd`
+[root@krosumlabs DAY3]#
+[root@krosumlabs DAY3]# echo ${V[1]}
+
+[root@krosumlabs DAY3]# A=(`grep bash /etc/passwd`)
+[root@krosumlabs DAY3]#
+[root@krosumlabs DAY3]# echo ${A[1]}
+student:x:1000:1000:student:/home/student:/bin/bash
+[root@krosumlabs DAY3]#
+[root@krosumlabs DAY3]# echo ${A[0]}
+root:x:0:0:root:/root:/bin/bash
+[root@krosumlabs DAY3]#
+[root@krosumlabs DAY3]# echo ${#A[@]}
+3
+[root@krosumlabs DAY3]#
+########################################################################
+[root@krosumlabs DAY3]# arr=(D1 D2 D3 D4 D5)
+[root@krosumlabs DAY3]#
+[root@krosumlabs DAY3]# echo ${arr[0]}
+D1
+[root@krosumlabs DAY3]# echo ${arr[1]}
+D2
+[root@krosumlabs DAY3]# echo ${arr[2]}
+D3
+[root@krosumlabs DAY3]# echo ${arr[-1]}
+D5
+[root@krosumlabs DAY3]# echo ${arr[-2]}
+D4
+[root@krosumlabs DAY3]# echo ${arr[-3]}
+D3
+[root@krosumlabs DAY3]# echo ${arr[9]}
+
+[root@krosumlabs DAY3]# echo ${arr[@]}
+D1 D2 D3 D4 D5
+[root@krosumlabs DAY3]# echo ${#arr[@]}
+5
+[root@krosumlabs DAY3]#
+====================================================================
+Write a shell script
+
+|-> create an empty array
+|-> display the no.of items from an array 
+
+|-> use while loop - limit 5
+	|->read a hostname from <STDIN>
+	|->add input hostname to an array
+	
+|-> use for loop - display list of items from an array
+
+|-> display the no.of items from an array 
+
+hosts=() # empty array
+
+echo "No of items: ${#hosts[@]}"
+
+c=0
+while [ $c -lt 5 ]
+do
+       read -p "Enter a hostname:" h  # read a hostname from <STDIN>
+       hosts[$c]=$h    # adding new data to an existing array
+       c=`expr $c + 1`
+done
+echo "List of host details:-"
+
+for var in ${hosts[@]}
+do
+     echo "$var"
+done
+echo "No of items: ${#hosts[@]}"
+#######################################################################################
+we can pass runtime input(commandline argument inputs) to an array
+
+
+apis=($@)
+
+echo "No of elements from array:${#apis[@]}"
+echo "No of elements from cmdline args:$#"
+
+echo $@
+echo ${apis[@]}
+echo ; sleep 3
+apis=(fastAPI $@ Flask Rails)
+
+echo "No of elements from array:${#apis[@]}"
+echo "No of elements from cmdline args:$#"
+
+echo $@
+echo ${apis[@]}
+
+-------------------------------------------------------------------------------------
+[root@krosumlabs DAY3]# ps|while read var
+> do
+> echo "$var"
+> done
+PID TTY          TIME CMD
+1190 pts/0    00:00:00 bash
+1638 pts/0    00:00:00 ps
+1639 pts/0    00:00:00 bash
+[root@krosumlabs DAY3]#
+[root@krosumlabs DAY3]# ps|while read -a var
+> do
+> echo "${var[0]}"
+> done
+PID
+1190
+1643
+1644
+[root@krosumlabs DAY3]# ps|while read -a var
+> do
+> echo "${var[0]}  ${var[-1]}"
+> done
+PID  CMD
+1190  bash
+1645  ps
+1646  bash
+[root@krosumlabs DAY3]#
+#########################################################################################
+single line code validiation
+
+&& ||
+
+
+command1 && command2
+-------
+|
+execute command1 ->Success ->then shell will execute command2
+	-------------------                          ---------
+
+
+command1 && command2
+--------
+|
+command1 execution is failed -->then shell won't execute command2
+
+
+
+[root@krosumlabs DAY3]# echo One && echo Two
+One
+Two
+[root@krosumlabs DAY3]# cat pp && echo Two
+cat: pp: No such file or directory
+[root@krosumlabs DAY3]# [ -f p1 ] && ls -l p1
+-rwxr-xr-x. 1 root root 356 Feb  5 10:48 p1
+[root@krosumlabs DAY3]# [ -f /etc ] && ls -l p1
+[root@krosumlabs DAY3]#
+
+
+command1 || command2
+-------
+|
+execute command1 ->Success ->then shell won't execute command2
+	-------------------                          ---------
+
+command1 || command2
+-------
+|
+execute command1 ->Failed ->then shell will execute command2
+	-------------------                          ---------
+
+
+
+[root@krosumlabs DAY3]# echo One || echo Two
+One
+[root@krosumlabs DAY3]# cat pp || echo "Sorry file pp is not exists"
+cat: pp: No such file or directory
+Sorry file pp is not exists
+[root@krosumlabs DAY3]# [ -f pp ] || ls -l pp
+ls: cannot access pp: No such file or directory
+[root@krosumlabs DAY3]#
+[root@krosumlabs DAY3]# [ -f pp ] || echo "Sorry file pp is not a reg.file"
+Sorry file pp is not a reg.file
+[root@krosumlabs DAY3]#
+
+
+
+if ! [ -f filename ]
+then			  =>   [ -f filename ] || exit 
+	exit
+fi
+
+if [ -d demo1 ]
+then
+    ls -ld demo1	=>   [ -d demo1 ]  &&  ls -ld demo1
+fi			
+########################################################################################
+
+function
+--------
+ |->Code block - collection of commands and scripts
+ |->reusability 
+
+ |->code definition 
+ |->functionCall - invoke a definition
+
+
+ |->definition syntax:-
+    -------------------
+
+function functionName()
+{
+   <codeblock>
+}
+function - keyword
+
+functionName # simple function Call
+
+[root@krosumlabs DAY3]# function display(){
+> uname -rs
+> ps
+> hostname
+> }
+[root@krosumlabs DAY3]# display
+Linux 4.1.12-124.92.3.el7uek.x86_64
+  PID TTY          TIME CMD
+ 1212 pts/1    00:00:00 bash
+ 1659 pts/1    00:00:00 ps
+krosumlabs
+[root@krosumlabs DAY3]# f1(){
+> echo "This is f1 block"
+> echo "Total no.of files:`ls -l|wc -l`"
+> }
+[root@krosumlabs DAY3]# f1
+This is f1 block
+Total no.of files:5
+[root@krosumlabs DAY3]#
+
+######################################################################
+
+f1(){
+  echo "list of servers:-"
+  echo "server1=$1  server2=$2"
+  echo "Total no.of args:$#"
+  for var in $@
+  do
+     echo "$var"
+  done
+  echo "Exit from $FUNCNAME block"
+}
+f1 unix Linux winx Qnx minix # function call with args
+   
+f1 # simple function Call
+
+##############################################################
+echo "from commandline args:-"
+echo $1 $2 $3
+echo $#
+echo $@
+############# from commandline args
+sleep 5 ; echo
+f1(){
+ echo "This is $FUNCNAME block"
+ echo "1st arg:$1 2nd arg:$2 3rd arg:$3"
+ echo "Total no.of args:$#"
+ echo "List of all:$@"
+ echo "Exit from $FUNCNAME Block"
+}
+
+f2(){
+ echo "This is $FUNCNAME block"
+ echo "1st arg:$1 2nd arg:$2 3rd arg:$3"
+ echo "Total no.of args:$#"
+ echo "List of all:$@"
+ echo "Exit from $FUNCNAME Block"
+}
+f1 10 20 30 40 50 # function call with args
+sleep 2
+f2 D1 D2 D3 D4 D5 D6 D7 # function call with args
+
+echo "exit from $0 script"
+##############################################################################
+
+
+[root@krosumlabs DAY3]# ls
+Demo  Demo1  Demo2  Demo3  Demo4  p1  p10  p11  p2  p3  p4  p5  p6  p7  p8  p9
+[root@krosumlabs DAY3]#
+[root@krosumlabs DAY3]#
+[root@krosumlabs DAY3]# for var in *
+> do
+> echo $var
+> done
+Demo
+Demo1
+Demo2
+Demo3
+Demo4
+p1
+p10
+p11
+p2
+p3
+p4
+p5
+p6
+p7
+p8
+p9
+[root@krosumlabs DAY3]# for var in *
+> do
+>    [ -d $var ] && rmdir $var
+> done
+[root@krosumlabs DAY3]# ls
+p1  p10  p11  p2  p3  p4  p5  p6  p7  p8  p9
+[root@krosumlabs DAY3]#
+
+
+
+[root@krosumlabs DAY3]#
+[root@krosumlabs DAY3]# cat -n p12
+     1
+     2  app="webApp"
+     3  port=3450
+     4
+     5  fx(){
+     6     var1=150
+     7     total=`expr $var1 + 100`
+     8     echo "Total=$total"
+     9  }
+    10
+[root@krosumlabs DAY3]# ./p12
+[root@krosumlabs DAY3]#
+[root@krosumlabs DAY3]# echo $app
+
+[root@krosumlabs DAY3]# echo $port
+
+[root@krosumlabs DAY3]# fx
+-bash: fx: command not found
+[root@krosumlabs DAY3]#
+[root@krosumlabs DAY3]# source /root/AdVShellScript/DAY3/p12 #(or) ./p12
+[root@krosumlabs DAY3]# echo $app
+webApp
+[root@krosumlabs DAY3]# echo $port
+3450
+[root@krosumlabs DAY3]# fx
+Total=250
+			<or>
+[root@krosumlabs DAY3]# . ./p12
+[root@krosumlabs DAY3]# echo $app
+webApp
+[root@krosumlabs DAY3]#
+
+[root@krosumlabs DAY3]# cat -n p12
+     1
+     2  app="webApp"
+     3  port=3450
+     4
+     5  fx(){
+     6     var1=150
+     7     total=`expr $var1 + 100`
+     8     echo "Total=$total"
+     9  }
+    10
+[root@krosumlabs DAY3]# ./p12
+[root@krosumlabs DAY3]#
+[root@krosumlabs DAY3]# echo $app
+
+[root@krosumlabs DAY3]# echo $port
+
+[root@krosumlabs DAY3]# fx
+-bash: fx: command not found
+[root@krosumlabs DAY3]#
+[root@krosumlabs DAY3]# source /root/AdVShellScript/DAY3/p12 #(or) ./p12
+[root@krosumlabs DAY3]# echo $app
+webApp
+[root@krosumlabs DAY3]# echo $port
+3450
+[root@krosumlabs DAY3]# fx
+Total=250
+[root@krosumlabs DAY3]# . ./p12
+[root@krosumlabs DAY3]# echo $app
+webApp
+[root@krosumlabs DAY3]#
+[root@krosumlabs DAY3]# vi p13
+[root@krosumlabs DAY3]# vi p14
+[root@krosumlabs DAY3]# chmod +x p13 p14
+[root@krosumlabs DAY3]#
+[root@krosumlabs DAY3]#
+[root@krosumlabs DAY3]# cat -n p12
+     1
+     2  app="webApp"
+     3  port=3450
+     4
+     5  fx(){
+     6     var1=150
+     7     total=`expr $var1 + 100`
+     8     echo "Total=$total"
+     9  }
+    10
+[root@krosumlabs DAY3]# cat -n p13
+     1
+     2  echo "This is $0 file"
+     3
+     4  source ./p12
+     5  echo "App name is:$app port=$port"
+[root@krosumlabs DAY3]# ./p13
+This is ./p13 file
+App name is:webApp port=3450
+[root@krosumlabs DAY3]# cat -n p14
+     1
+     2  echo "This is $0 file"
+     3
+     4  . ./p12
+     5
+     6  echo "App $app details:-
+     7  ------------------------
+     8  app=$app port=$port
+     9  ------------------------"
+    10
+    11  fx # function Call
+[root@krosumlabs DAY3]# ./p14
+This is ./p14 file
+App webApp details:-
+------------------------
+app=webApp port=3450
+------------------------
+Total=250
+[root@krosumlabs DAY3]#
+######################################################################################
+
+export variable=value
+
+export -f functionName
+
+
+
+
+[root@krosumlabs DAY3]# fx(){
+> echo "This is fx code"
+> }
+[root@krosumlabs DAY3]# fx
+This is fx code
+[root@krosumlabs DAY3]#
+[root@krosumlabs DAY3]# bash  # creating subshell
+[root@krosumlabs DAY3]#
+[root@krosumlabs DAY3]# fx   # not visible 
+bash: fx: command not found
+[root@krosumlabs DAY3]# exit
+exit
+[root@krosumlabs DAY3]#
+[root@krosumlabs DAY3]# export -f fx # export function defintion
+[root@krosumlabs DAY3]# bash
+[root@krosumlabs DAY3]#
+[root@krosumlabs DAY3]# fx  # visible in subshell
+This is fx code
+[root@krosumlabs DAY3]# exit
+exit
+[root@krosumlabs DAY3]# unset -f fx   # delete this fx block definition
+[root@krosumlabs DAY3]# ##### #####
+[root@krosumlabs DAY3]# fx
+-bash: fx: command not found
+[root@krosumlabs DAY3]#
+
+
+---------------------------------------------------------------------------
+
+Login:____
+
+password:_____
+
+ |
+shell(CLI)  Vs Desktop(GUI)
+
+
+Login as: root		Login as: userA		  Login as:userB
+password:		password:		  password:
+|			|			  |
+<--     shell read and execute /etc/profile 			-->
+root@host~]#		userA@host~]$		  userB@host~]$
+------------            ---------------		  ---------------
+
+/etc/profile
+--------------
+ |->Global configuration script file
+ |->edit by root user only
+
+
+root@host~]# pwd		userA@host~]$ pwd		  userB@host~]$ pwd
+/root				/home/userA			  /home/userB
+
+
+root@host~]# ls -a		userA@host~]$ ls -a		  userB@host~]$	 ls -a
+.bashrc				.bashrc      			  .bashrc
+.bash_history
+..
+#########################################################################################
+
+Q1. Given Array
+
+Disk_Size=(120 100 150 200 250)
+
+Calculate Sum of disk size
+display total value to monitor
+
+Q2. Write a shell script
+
+   |-> use find command - filter list of .sh files from /etc directory (or) login dir ~
+       |
+       initialize find command results to an array
+       |
+       |->Count - display total no.of .sh file
+       |->Test - no.of sh files are less than 10  - for loop - iterate one by one
+			  ------------------------  =========  ------------------
+			
+-------------------------------------------------------------------------------------
+	root@host~]# find /etc -name "*.sh"
+		     	 <or>
+		     find ~ -name "*.sh" 	
+-------------------------------------------------------
+
+conf_sh=(`find /etc -name "*.sh"`)
+
+echo "Total no.of sh files:${conf_sh[@]}"
+
+if [ ${#conf_sh[@]}  -lt 10 ];then
+	for var in ${conf_sh[@]}
+	do
+		echo "$var"
+	done
+else
+	echo "No.of sh files are more than 10 files"
+fi
+
+-------------------------------------------------------------------
+
+find /var/log -name "*.log" |xargs grep httpd
+		|		     |
+		|____________________|
+	
+
+P1 - 101  - 0x123
+|  
+P2 - 102  - 0x345
+
+
+P1 - 101 - 0x123  (COW) //execute ->exit 
+|  		  |----
+P2 - 102 ---------- |-> -exec .....
+
+find /var/log -name "*.log" -exec grep httpd {} \;
+-----------------------------------------------------------------------------
+Regular Expression
+-------------------
+ |->search	-> grep ; sed ; awk //commands
+ |->substitute  -> sed 
+
+1.Basic Regular Expression (BRE)
+-----------------------------------
+2.Extended Regular Expression (ERE)
+-----------------------------------
+
+1.Basic Regular Expression (BRE)  - Single pattern
+-----------------------------------
+^
+$
+^pattern$
+.
+.*
+[ ]
+^[ ]
+[ ]$
+[^ ]
+^$
+------------------------------------
+
+^ =>  ^pattern - line starts with pattern
+
+
+[root@krosumlabs DAY3]# grep -n ^sales IP
+2:sales,bglore
+3:sales,
+4:sales:
+8:sales
+9:sales
+[root@krosumlabs DAY3]# grep -n ^s IP
+2:sales,bglore
+3:sales,
+4:sales:
+6:system
+8:sales
+9:sales
+[root@krosumlabs DAY3]# ls -l ~|grep "^d"
+drwxr-xr-x. 5 root root       42 Feb  5 09:34 AdVShellScript
+drwxr-xr-x. 2 root root       38 Mar  7  2021 ansible_tut
+drwxr-xr-x. 4 root root       54 Dec 16 09:56 Demo1
+[root@krosumlabs DAY3]# ps|grep ^" "
+  PID TTY          TIME CMD
+ 1212 pts/1    00:00:00 bash
+ 3254 pts/1    00:00:00 ps
+ 3255 pts/1    00:00:00 grep
+[root@krosumlabs DAY3]#
+
+
+^pattern   - matches the pattern line starts 
+	
+ pattern$  - matches the pattern line ends 
+
+
+^pattern$  - pattern only style
+
+^sales$ => sales //OK
+	   sales, //Not-matched
+	   :sales //Not-matched
+	   salesales //Not-matched
+
+. (dot) => match any single character except \n
+-------
+
+grep sales.. IP
+sales<><>
+   sales<><>
+sales<><>
+
+ps|grep ..$ 
+        ----
+	 |->ends with any two chars
+
+	
+[] <== character class symbol
+--
+
+[Aa]run
+-------->Arun arun//OK
+
+[Aa][Rr]un
+-------------->ARun Arun aRun arun //OK
+
+[a-z] 
+[A-Z]
+[a-zA-Z]
+[0-9]
+[a-zA-Z0-9]
+------------//alpha numeric 
+
+grep "^[a-zA-Z].*[a-zA-Z0-9]$" IP
+      |_____________________|
+
+starts with any alpha followed by any text ends with any single alphanumeric char
+
+ ^[a-z] 
+ ------- //line starts with any lowercase chars
+
+ [a-z]$
+ ----------//line ends with any lowercase chars
+
+[^a-z]
+-------//NOT Matching any lowercase chars    
+
+[^a-zA-Z]  - Not matching alpha 
+
+[^a-zA-Z0-9] - Not matching alpha numeric 
+ -----------
+  |->matches space; special chars
+
+[^a-zA-Z0-9" "]
+-----------------//match - special chars
+
+character class				posix class
+
+[a-z]					[[:lower:]]
+[A-Z]					[[:upper:]]
+
+[a-zA-Z]				[[:alpha:]]
+
+[0-9]					[[:digit:]]
+
+[a-zA-Z0-9]				[[:alnum:]]
+
+space" "				[[:space:]]
+
+[^a-zA-Z0-9' ']				[[:punct:]]
+
+###
+not matching any specialchars
+ps|grep "[^[:punct:]]"
+  PID TTY          TIME CMD
+ 1212 pts/1    00:00:00 bash
+ 5156 pts/1    00:00:00 ps
+ 5157 pts/1    00:00:00 grep
+-------------------------------
+
+^$ --> empty line
+--
+
+[root@krosumlabs DAY3]# cat -n process.log
+     1    PID TTY          TIME CMD
+     2
+     3
+     4   1212 pts/1    00:00:00 bash
+     5
+     6
+     7
+     8   5285 pts/1    00:00:00 ps
+[root@krosumlabs DAY3]# grep -n "^$" process.log
+2:
+3:
+5:
+6:
+7:
+[root@krosumlabs DAY3]# grep -v "^$" process.log
+  PID TTY          TIME CMD
+ 1212 pts/1    00:00:00 bash
+ 5285 pts/1    00:00:00 ps
+[root@krosumlabs DAY3]#
+
+#######################################################################################
+BRE
+----
+^
+$
+^pattern$
+.
+.*
+[]
+^[]
+[]$
+[^]
+^$
+------ 
+##################################################################################
+
+ERE ; grep -E 
+----
+| () + {}
+
+pattern1|pattern2|pattern3|...|pattern
+.....................................
+ |->any one pattern is matched ->True
+
+
+Write a shell script
+|
+read any single digit (or) two digits from commandline argument
+	 -------------     --------------
+	  |->Valid ; Invalid
+
+./p1.sh 5 -> Valid
+./p1.sh 5 6 ->Valid
+./p1.sh 5 6 7 ->Invalid
+
+	echo $1 | grep -qE "^[0-9]$|^[0-9][0-9]$"
+	if [ $? -eq 0 ];then
+	  echo "Valid"
+        else
+          echo "Invalid"
+ 	fi
+=====================================================
+
+<pattern1> | <pattern2>  - any one pattern is matched ->OK
+			   (any order)
+------------ ----------//like logical ||
+
+(<pattern1>)(<pattern2>) - both pattern should match same order ->OK
+ ----------   ---------  //like logical &&
+				
+
+
+
+[root@krosumlabs DAY3]# echo "shell supports for and while loop statements"
+shell supports for and while loop statements
+[root@krosumlabs DAY3]#
+[root@krosumlabs DAY3]#
+[root@krosumlabs DAY3]# echo "shell supports for and while loop statements"|grep -E "until|for|do"
+shell supports for and while loop statements
+[root@krosumlabs DAY3]#
+[root@krosumlabs DAY3]# echo "shell supports for and while loop statements"|grep -E "until|for|do|while"
+shell supports for and while loop statements
+[root@krosumlabs DAY3]#
+[root@krosumlabs DAY3]# echo "shell supports for and while loop statements"|grep -E "(for)(while)"
+[root@krosumlabs DAY3]#
+[root@krosumlabs DAY3]#
+[root@krosumlabs DAY3]# echo "shell supports for and while loop statements"|grep -E "(for).*(while)"
+shell supports for and while loop statements
+[root@krosumlabs DAY3]# echo "shell supports for and while loop statements"|grep -E "(while).*(for)"
+[root@krosumlabs DAY3]#
+[root@krosumlabs DAY3]# ps -e|grep -E "^[[:space:]].*(net|dbus|system|service).*[a-z]$"
+    1 ?        00:00:05 systemd
+   15 ?        00:00:00 netns
+  493 ?        00:00:00 systemd-journal
+  526 ?        00:00:00 systemd-udevd
+  676 ?        00:00:00 dbus-daemon
+  684 ?        00:00:00 systemd-logind
+[root@krosumlabs DAY3]#
+[root@krosumlabs DAY3]#
+[root@krosumlabs DAY3]# ps -e|grep -E "^[[:space:]].*net|dbus|system|service.*[a-z]$"
+    1 ?        00:00:05 systemd
+   15 ?        00:00:00 netns
+  493 ?        00:00:00 systemd-journal
+  526 ?        00:00:00 systemd-udevd
+  676 ?        00:00:00 dbus-daemon
+  684 ?        00:00:00 systemd-logind
+[root@krosumlabs DAY3]#
+-------------------------------------------------------------------------------
+ + <== 1 or more 
+
+<Pattern>+
+---------- 
+   \___ minimum 1 time ; more time
+
+ab+c
+-----
+ \_____ abc 
+\______ abbbbbbbbbbbc
+\______ abbbbbbbbbbbbbbbbbbbbbbbbbbc 
+	----------------------------//OK
+
+abbbbbbbbbbbbbbb,bbbbbbbbbbc //Not-Matched
+
+
+^[[:space:]]+
+-------------
+  |->line starts with 1 or more space
+
+^[a-zA-Z][0-9]+
+ ---------------
+    |-->line starts with any alpha followed by 1 or more digits
+
+         a3 
+	 A1
+	 b1123131313131313123
+	 f123123123123131313131 
+	 Ab13312//Not-matched
+--------------------------------------------------------------------------------
+
+{} <== IRE
+
+<pattern>{n}	=>  ab{3}c  => abbbc //OK   abc abbc abbbbc //Not-matched
+
+<pattern>{n,}   =>  ab{3,}c => abbbc abbbbbbbbbbbbbbbbbbbbb//OK    abc abbc //Not-Matched
+
+		    ab+c  same as ab{1,}c 
+		    -------------------------
+
+<pattern>{n,m} => ab{3,5}c  => abbbc abbbbc abbbbbc //OK
+			       abc abbc abbbbbbc //Not-matched
+-------------------------------------------------------------------------------
+Filter list of python,ruby,java rpm packages supports with any architectures  initialize
+results to user defined array
+|
+python_ruby_rpms=(`rpm -qa|grep -E "^(python|ruby|java).*noarch$"`)
+
+#############################################################################
+
+Write a shell script
+
+|->read a URL name from <STDIN>
+   |
+   URL name starts with http <or> https followed by any text 
+   ends with org <or> com 
+   -----------------------------------------------------------
+		//Valid URL ; Invalid URL
+
+
+http://www.abc.com
+https://www.abc.com
+http://www.python.org
+https://www.google.com
+....               ...
+----------------------------//Valid
+
+http://www.abc.in
+https://www.abc.edu
+ftp://www.abc.org
+ftp://abc.com
+----------------------//not-matched
+
+
+^(https|http).*(org|com)$
+ ------------   --------
+########################################################################################
+
+
+
+
+
+
+
+
+
+
