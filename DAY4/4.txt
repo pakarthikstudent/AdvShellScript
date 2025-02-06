@@ -1,0 +1,1666 @@
+Recap:
+-------
+Regx - BRE + ERE
+	     ----
+	     grep -E 
+	     sed  -r
+
+root@host~]#  command -option arg1 arg2
+	      -------  ------ ==== ====
+				^   ^
+			       inputs - UDV=value (or) read (or) commandline args
+					Array=(`command`)		
+
+		if [ ];then
+			..
+		else
+			..
+		fi
+		-------------
+################################################################################
+ 
+ =~ <== match operator - supports regx
+ 
+Syntax:-
+---------
+ [[  $inputValue =~  RegxPattern ]]  -> 0 / non-zero
+
+
+
+
+[root@krosumlabs ~]# s="101,raj,sales,pune,1000"
+[root@krosumlabs ~]#
+[root@krosumlabs ~]# [[ $s =~ sales ]];echo $?
+0
+[root@krosumlabs ~]# echo $s|grep sales
+101,raj,sales,pune,1000
+[root@krosumlabs ~]# echo $s|grep -q sales ;echo $?
+0
+[root@krosumlabs ~]# [ "sales," == sales ] ;echo $?
+1
+[root@krosumlabs ~]# [[ $s =~ [0-9]{2} ]] ;echo $?
+0
+[root@krosumlabs ~]# [[ $s =~ ^[0-9].*(sales|prod|QA).*[0-9]$ ]] ;echo $?
+0
+[root@krosumlabs ~]# echo $s|grep -E "^[0-9].*(sales|prod|QA).*[0-9]$"
+101,raj,sales,pune,1000
+[root@krosumlabs ~]# echo $s|grep -E "^[0-9].*(Sales|prod|QA).*[0-9]$"
+[root@krosumlabs ~]#
+[root@krosumlabs ~]# echo $s|grep -iE "^[0-9].*(Sales|prod|QA).*[0-9]$"
+101,raj,sales,pune,1000
+[root@krosumlabs ~]#
+
+
+grep
+-----
+ |->read data from <FILE> - line by line   => File Handling
+ |->search a pattern			   => [[ $inputvar =~ pattern ]]
+ |->display matched pattern line only	   => if only
+
+
+while read var
+do
+    if [[ $var =~ sales ]];then
+	echo $var
+    fi
+done<emp.csv
+
+
+
+Color="\e[31m"
+end="\e[0m"
+
+mygrep(){
+if [ $# -ne 2 ];then
+  echo "Usage $FUNCNAME <Pattern> <inputFile>"
+  return 1
+fi
+while read var
+do
+    if [[ $var =~ $1 ]];then
+        echo -e "$Color $var $end"
+    fi
+done<$2
+}
+
+mygrep sales emp.csv
+[ $? -eq 0 ] || echo "search operation is failed"
+
+# like -> grep sales emp.csv
+# ---------------------------
+###################################################################################
+
+grep
+----
+grep -option pattern inputFile
+
+pattern: text (or) string 
+action: print (or) display 
+
+sed
+----
+sed -option 'patternAction' inputFile
+		    
+pattern:
+--------
+	|->LineNumber (or) address 
+	|->Text (or) string    ------>/pattern/
+
+Actions: print(p) write(w)  delete(d) substitute(s) insert(i) change(c)
+	 execute(e) append(a)
+
+sed internal
+--------------
+READ - read the data from <FILE> (or) PIPE -line by line 
+STORES - keep all input data to internal buffer (pattern buffer)
+EXECUTE - execute sed command on the buffer (So there is no changes in input File)
+DISPLAY - display to monitor - then buffer will be empty
+
+  IP                 Buffer			Monitor
++-------+	  +-----------+		      +-----------+
+| data1 |	  |  data1    |		      |           |
+| data2 |         |  data2    |    =>
+| data3 |         |  data3    |
++-------+	  +-----------+
+
+
+LineNumber based pattern
+------------------------
+ N -> Nth line
+ N,M -> range ->from Nth line to Mth line
+
+print(p)
+write(w)
+----------- use -n option is required
+
+print 3rd line content from emp.csv file
+
+sed -option 'patternAction' inputFile
+|
+sed -n '3p' emp.csv
+       ----
+
+[root@krosumlabs DAY4]# cat -n emp.csv |sed -n '3p'
+     3  450,raj,prod,pune,2340
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# sed -n '3p' emp.csv
+450,raj,prod,pune,2340
+[root@krosumlabs DAY4]# sed -n '3p' /etc/passwd
+daemon:x:2:2:daemon:/sbin:/sbin/nologin
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# sed -n '3p' /var/log/messages
+Feb  5 12:53:27 krosumlabs systemd: Started Session 7 of user root.
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# ps -e|sed -n '3p'
+    2 ?        00:00:00 kthreadd
+
+write
+------
+sed -n 'LineNumber<Action><space><resultFile>' inputFile
+
+to write 3rd line number content
+
+sed -n '3w r2.log' emp.csv
+        ---------
+
+root@krosumlabs DAY4]# cat -n emp.csv |sed -n -e '3p' -e '5p'
+     3  450,raj,prod,pune,2340
+     5  894,sai,sales,bglore,3421
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# sed -n '3,5w r3.log' emp.csv
+[root@krosumlabs DAY4]# cat r3.log
+450,raj,prod,pune,2340
+590,anu,HR,bglore,3123
+894,sai,sales,bglore,3421
+[root@krosumlabs DAY4]# sed -n -e '3w a.txt' -e '5w b.txt' emp.csv
+[root@krosumlabs DAY4]# cat a.txt
+450,raj,prod,pune,2340
+[root@krosumlabs DAY4]# cat b.txt
+894,sai,sales,bglore,3421
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# sed -n '100,200w r4.log' /var/log/messages
+[root@krosumlabs DAY4]# wc -l r4.log
+101 r4.log
+[root@krosumlabs DAY4]# ls -lh r4.log
+-rw-r--r--. 1 root root 8.4K Feb  6 10:30 r4.log
+[root@krosumlabs DAY4]#
+
+################################################################################
+
+delete (d)
+-----------
+ |->opp print
+
+
+print 2nd line content from IP file
+		
+		sed -n '2p' IP
+
+  IP                 Buffer			Monitor
++-------+	  +-----------+		      +-----------+
+| data1 |	  |  data1    |		      |           |
+| data2 |         |  data2    |    =>	      |  data2    |
+| data3 |         |  data3    |		      +-----------+
++-------+	  +-----------+
+
+delete 2nd line content from IP file
+		sed '2d' IP
+
+  IP                 Buffer			Monitor
++-------+	  +-----------+		      +-----------+
+| data1 |	  |  data1    |		      | data1     |
+| data2 |         |           |    =>	      | data3     |
+| data3 |         |  data3    |		      +-----------+
++-------+	  +-----------+
+
+
+# in sed last line number - $
+
+# print last line content -> sed -n '$p' IP
+# write last line content -> sed -n '$w r1.log' IP
+# delete last line content -> sed '$d' IP
+
+
+[root@krosumlabs DAY4]# cat -n emp.csv |sed '3d'
+     1  101,raj,sales,pune,1000
+     2  102,leo,prod,bglore,2000
+     4  590,anu,HR,bglore,3123
+     5  894,sai,sales,bglore,3421
+     6  849,anu,prod,noida,4923
+     7  324,shan,sales,hyd,8900
+     8  569,kumar,prod,pune,8903
+     9  634,karthik,sales,bglore,3890
+    10  784,theeb,Hr,chennai,7892
+    11  734,rao,hr,hyd,8923
+    12  456,arun,sales,mumbai,8923
+[root@krosumlabs DAY4]# cat -n emp.csv |sed '3,10d'
+     1  101,raj,sales,pune,1000
+     2  102,leo,prod,bglore,2000
+    11  734,rao,hr,hyd,8923
+    12  456,arun,sales,mumbai,8923
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# cat -n emp.csv |sed -e '3d' -e '10d'
+     1  101,raj,sales,pune,1000
+     2  102,leo,prod,bglore,2000
+     4  590,anu,HR,bglore,3123
+     5  894,sai,sales,bglore,3421
+     6  849,anu,prod,noida,4923
+     7  324,shan,sales,hyd,8900
+     8  569,kumar,prod,pune,8903
+     9  634,karthik,sales,bglore,3890
+    11  734,rao,hr,hyd,8923
+    12  456,arun,sales,mumbai,8923
+[root@krosumlabs DAY4]# ps
+  PID TTY          TIME CMD
+ 1238 pts/1    00:00:00 bash
+ 1378 pts/1    00:00:00 ps
+[root@krosumlabs DAY4]# ps|sed '1d'
+ 1238 pts/1    00:00:00 bash
+ 1379 pts/1    00:00:00 ps
+ 1380 pts/1    00:00:00 sed
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# ps|sed -e '1d' -e '$d'
+ 1238 pts/1    00:00:00 bash
+ 1381 pts/1    00:00:00 ps
+[root@krosumlabs DAY4]#
+
+#########################################################################
+N - LineNumber
+---------------
+insert(i)     		append(a)			change(c)
+
+sed 'Ni <newText>' IP   sed 'Na <newText>' IP		sed 'Nc <newText>' IP	
+
+
+
+IP
+-------
+data1
+data2
+data3
+-------
+insert(i)			append(a)		change(c)
+----------			---------		----------
+sed '2i ABCD' IP		sed '2a ABCD' IP	sed '2c ABCD' IP
+
+data1				data1			data1
+ABCD <== 			data2			ABCD <== 
+data2				ABCD <===		data3
+data3				data3
+________________________________________________________________________________
+[root@krosumlabs DAY4]# cat -n emp.csv
+     1  101,raj,sales,pune,1000
+     2  102,leo,prod,bglore,2000
+     3  450,raj,prod,pune,2340
+     4  590,anu,HR,bglore,3123
+     5  894,sai,sales,bglore,3421
+     6  849,anu,prod,noida,4923
+     7  324,shan,sales,hyd,8900
+     8  569,kumar,prod,pune,8903
+     9  634,karthik,sales,bglore,3890
+    10  784,theeb,Hr,chennai,7892
+    11  734,rao,hr,hyd,8923
+    12  456,arun,sales,mumbai,8923
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# sed '5i 111,paul,sales,pune,1450' emp.csv
+101,raj,sales,pune,1000
+102,leo,prod,bglore,2000
+450,raj,prod,pune,2340
+590,anu,HR,bglore,3123
+111,paul,sales,pune,1450
+894,sai,sales,bglore,3421
+849,anu,prod,noida,4923
+324,shan,sales,hyd,8900
+569,kumar,prod,pune,8903
+634,karthik,sales,bglore,3890
+784,theeb,Hr,chennai,7892
+734,rao,hr,hyd,8923
+456,arun,sales,mumbai,8923
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# sed '5a 111,paul,sales,pune,1450' emp.csv
+101,raj,sales,pune,1000
+102,leo,prod,bglore,2000
+450,raj,prod,pune,2340
+590,anu,HR,bglore,3123
+894,sai,sales,bglore,3421
+111,paul,sales,pune,1450
+849,anu,prod,noida,4923
+324,shan,sales,hyd,8900
+569,kumar,prod,pune,8903
+634,karthik,sales,bglore,3890
+784,theeb,Hr,chennai,7892
+734,rao,hr,hyd,8923
+456,arun,sales,mumbai,8923
+[root@krosumlabs DAY4]# sed '5c 111,paul,sales,pune,1450' emp.csv
+101,raj,sales,pune,1000
+102,leo,prod,bglore,2000
+450,raj,prod,pune,2340
+590,anu,HR,bglore,3123
+111,paul,sales,pune,1450
+849,anu,prod,noida,4923
+324,shan,sales,hyd,8900
+569,kumar,prod,pune,8903
+634,karthik,sales,bglore,3890
+784,theeb,Hr,chennai,7892
+734,rao,hr,hyd,8923
+456,arun,sales,mumbai,8923
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# sed '$a 111,paul,sales,pune,1450' emp.csv
+101,raj,sales,pune,1000
+102,leo,prod,bglore,2000
+450,raj,prod,pune,2340
+590,anu,HR,bglore,3123
+894,sai,sales,bglore,3421
+849,anu,prod,noida,4923
+324,shan,sales,hyd,8900
+569,kumar,prod,pune,8903
+634,karthik,sales,bglore,3890
+784,theeb,Hr,chennai,7892
+734,rao,hr,hyd,8923
+456,arun,sales,mumbai,8923
+111,paul,sales,pune,1450
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# sed '$i 111,paul,sales,pune,1450' emp.csv
+101,raj,sales,pune,1000
+102,leo,prod,bglore,2000
+450,raj,prod,pune,2340
+590,anu,HR,bglore,3123
+894,sai,sales,bglore,3421
+849,anu,prod,noida,4923
+324,shan,sales,hyd,8900
+569,kumar,prod,pune,8903
+634,karthik,sales,bglore,3890
+784,theeb,Hr,chennai,7892
+734,rao,hr,hyd,8923
+111,paul,sales,pune,1450
+456,arun,sales,mumbai,8923
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# ps
+  PID TTY          TIME CMD
+ 1238 pts/1    00:00:00 bash
+ 1392 pts/1    00:00:00 ps
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# ps|sed -e '1i ----------' -e '$a ----------'
+----------
+  PID TTY          TIME CMD
+ 1238 pts/1    00:00:00 bash
+ 1414 pts/1    00:00:00 ps
+ 1415 pts/1    00:00:00 sed
+----------
+[root@krosumlabs DAY4]# ps|sed -e '1i ----------' -e '1a ----------' -e '$a ----   -----'
+----------
+  PID TTY          TIME CMD
+----------
+ 1238 pts/1    00:00:00 bash
+ 1416 pts/1    00:00:00 ps
+ 1417 pts/1    00:00:00 sed
+---------
+[root@krosumlabs DAY4]#
+
+############################################################################
+Text(or)string pattern
+---------------------------
+  |
+ /pattern/Action
+
+sed -option '/text/Action' inputFile
+
+print 3rd line content from emp.csv  
+----- =           
+sed -n '3p' emp.csv
+
+print sales dept details from emp.csv
+----- =====
+sed -n '/sales/p' emp.csv  - like grep  => grep sales emp.csv
+
+write sales dept details to r1.log file
+----- =====
+sed -n '/sales/w r1.log' emp.csv
+       |_______________|
+
+delete sales dept details from emp.csv
+------ =====
+
+sed '/sales/d' emp.csv
+     ---------
+
+
+[root@krosumlabs DAY4]# sed -n '/sales/p' emp.csv
+101,raj,sales,pune,1000
+894,sai,sales,bglore,3421
+324,shan,sales,hyd,8900
+634,karthik,sales,bglore,3890
+456,arun,sales,mumbai,8923
+[root@krosumlabs DAY4]# grep sales emp.csv
+101,raj,sales,pune,1000
+894,sai,sales,bglore,3421
+324,shan,sales,hyd,8900
+634,karthik,sales,bglore,3890
+456,arun,sales,mumbai,8923
+[root@krosumlabs DAY4]# sed -n '/sales/w r1.log' emp.csv
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# cat r1.log
+101,raj,sales,pune,1000
+894,sai,sales,bglore,3421
+324,shan,sales,hyd,8900
+634,karthik,sales,bglore,3890
+456,arun,sales,mumbai,8923
+[root@krosumlabs DAY4]# sed '/sales/d' emp.csv
+102,leo,prod,bglore,2000
+450,raj,prod,pune,2340
+590,anu,HR,bglore,3123
+849,anu,prod,noida,4923
+569,kumar,prod,pune,8903
+784,theeb,Hr,chennai,7892
+734,rao,hr,hyd,8923
+[root@krosumlabs DAY4]# sed '/sales/i -------------' emp.csv
+-------------
+101,raj,sales,pune,1000
+102,leo,prod,bglore,2000
+450,raj,prod,pune,2340
+590,anu,HR,bglore,3123
+-------------
+894,sai,sales,bglore,3421
+849,anu,prod,noida,4923
+-------------
+324,shan,sales,hyd,8900
+569,kumar,prod,pune,8903
+-------------
+634,karthik,sales,bglore,3890
+784,theeb,Hr,chennai,7892
+734,rao,hr,hyd,8923
+-------------
+456,arun,sales,mumbai,8923
+[root@krosumlabs DAY4]# sed '/sales/a -------------' emp.csv
+101,raj,sales,pune,1000
+-------------
+102,leo,prod,bglore,2000
+450,raj,prod,pune,2340
+590,anu,HR,bglore,3123
+894,sai,sales,bglore,3421
+-------------
+849,anu,prod,noida,4923
+324,shan,sales,hyd,8900
+-------------
+569,kumar,prod,pune,8903
+634,karthik,sales,bglore,3890
+-------------
+784,theeb,Hr,chennai,7892
+734,rao,hr,hyd,8923
+456,arun,sales,mumbai,8923
+-------------
+[root@krosumlabs DAY4]#
+#####################################################################
+sed supports BRE and ERE 
+
+ERE | () + {} => sed -r '/regx/Action' 
+
+
+[root@krosumlabs DAY4]# grep ^[1-5] emp.csv
+101,raj,sales,pune,1000
+102,leo,prod,bglore,2000
+450,raj,prod,pune,2340
+590,anu,HR,bglore,3123
+324,shan,sales,hyd,8900
+569,kumar,prod,pune,8903
+456,arun,sales,mumbai,8923
+[root@krosumlabs DAY4]# grep ^[1-5].*00$ emp.csv
+101,raj,sales,pune,1000
+102,leo,prod,bglore,2000
+324,shan,sales,hyd,8900
+[root@krosumlabs DAY4]# sed -n '/^[1-5].*00$/p' emp.csv
+101,raj,sales,pune,1000
+102,leo,prod,bglore,2000
+324,shan,sales,hyd,8900
+[root@krosumlabs DAY4]# sed -n '/^[1-5].*(sales|DBA|prod|CRM).*00$/p' emp.csv
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# sed -nr '/^[1-5].*(sales|DBA|prod|CRM).*00$/p' emp.csv
+101,raj,sales,pune,1000
+102,leo,prod,bglore,2000
+324,shan,sales,hyd,8900
+[root@krosumlabs DAY4]# sed -r '/^[1-5].*(sales|DBA|prod|CRM).*00$/d' emp.csv
+450,raj,prod,pune,2340
+590,anu,HR,bglore,3123
+894,sai,sales,bglore,3421
+849,anu,prod,noida,4923
+569,kumar,prod,pune,8903
+634,karthik,sales,bglore,3890
+784,theeb,Hr,chennai,7892
+734,rao,hr,hyd,8923
+456,arun,sales,mumbai,8923
+[root@krosumlabs DAY4]#
+
+## To delete empty lines
+
+[root@krosumlabs DAY4]# sed '/^$/d' process.log
+  PID TTY          TIME CMD
+ 1238 pts/1    00:00:00 bash
+ 1456 pts/1    00:00:00 ps
+[root@krosumlabs DAY4]#
+----------------------------------------------------------------------------------
+
+Task:
+=====
+#print 3rd line content from /etc/passwd file
+sed -n '3p' /etc/passwd
+
+
+#print 15,25 line content from ps -e
+ ps -e|sed -n '15,25p'
+
+
+#delete following process  from ps -e 
+#	|->system,bash,processname ends with any digits
+
+ps -e|sed -r '/system|bash|[0-9]$/d' 
+
+	
+#write 1st 5 lines contents from emp.csv to external file
+
+sed -n '1,5w r1.log' emp.csv	
+
+#change 5th line to last line content ->  ------
+
+sed '5,$c ------' emp.csv
+
+
+IP
+---
+--------Header-----------
+Data1
+Data2
+Data3
+-------Footer------------
+
+# delete Header and Footer lines 
+#-----------------------------------------------------------------
+
+[root@krosumlabs DAY4]# cat IP
+--------Header-----------
+Data1
+Data2
+Data3
+-------Footer------------
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# sed -e '1d' -e '$d' IP
+Data1
+Data2
+Data3
+[root@krosumlabs DAY4]# sed -e '/Header/d' -e '/Footer/d' IP
+Data1
+Data2
+Data3
+[root@krosumlabs DAY4]#
+
+#######################################################################
+
+
+[root@krosumlabs DAY4]# vi ptr
+[root@krosumlabs DAY4]# cat ptr
+sales
+prod
+pune
+[root@krosumlabs DAY4]# grep -f ptr emp.csv
+101,raj,sales,pune,1000
+102,leo,prod,bglore,2000
+450,raj,prod,pune,2340
+894,sai,sales,bglore,3421
+849,anu,prod,noida,4923
+324,shan,sales,hyd,8900
+569,kumar,prod,pune,8903
+634,karthik,sales,bglore,3890
+456,arun,sales,mumbai,8923
+[root@krosumlabs DAY4]# vi ptr1
+[root@krosumlabs DAY4]# cat ptr1
+1p
+4p
+9p
+$p
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# sed -n -f 'ptr1' /etc/passwd
+root:x:0:0:root:/root:/bin/bash
+adm:x:3:4:adm:/var/adm:/sbin/nologin
+mail:x:8:12:mail:/var/spool/mail:/sbin/nologin
+apache:x:48:48:Apache:/usr/share/httpd:/sbin/nologin
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# sed -n -f 'ptr1' emp.csv
+101,raj,sales,pune,1000
+590,anu,HR,bglore,3123
+634,karthik,sales,bglore,3890
+456,arun,sales,mumbai,8923
+[root@krosumlabs DAY4]#
+------------------------------------------------------------------------------
+
+ 
+[root@krosumlabs DAY4]# cat -n emp.csv |sed -n '3,6p'
+     3  450,raj,prod,pune,2340
+     4  590,anu,HR,bglore,3123
+     5  894,sai,sales,bglore,3421
+     6  849,anu,prod,noida,4923
+[root@krosumlabs DAY4]# cat -n emp.csv |sed -n '/raj/,/kumar/p'
+     1  101,raj,sales,pune,1000
+     2  102,leo,prod,bglore,2000
+     3  450,raj,prod,pune,2340
+     4  590,anu,HR,bglore,3123
+     5  894,sai,sales,bglore,3421
+     6  849,anu,prod,noida,4923
+     7  324,shan,sales,hyd,8900
+     8  569,kumar,prod,pune,8903
+[root@krosumlabs DAY4]#
+------------------------------------------------------------------------------
+ From date to To date - search
+ sed -n '/^Feb.*6.*09:05.*"/,/^Feb.*6.*10:.*/w r1.log' /var/log/messages
+--------------------------------------------------------------------------------
+
+substitute
+-----------
+sed 's/oldpattern/replace/' inputFile
+       
+echo "userA:bash:1001" |sed 's/bash/ksh/' -> userA:ksh:1001
+	    
+echo "userB:csh:1002"  |sed 's/bash/ksh/' -> userB:csh:1002
+
+echo "userC:bash:1003:bash:x:bash" | sed 's/bash/ksh/' -> userC:ksh:1003:bash:x:bash
+            ----                                                ----
+
+echo "userC:bash:1003:bash:x:bash" | sed 's/bash/ksh/g' -> userC:ksh:1003:ksh:x:ksh
+            ----                                                ----      ---   ----
+g - global replacement
+
+echo "userD:BASH:1004" |sed 's/bash/ksh/' ->userD:BASH:1004
+|
+echo "userD:BASH:1004" |sed 's/bash/ksh/i' ->userD:ksh:1004
+
+i - ignore pattern case 
+
+echo "userE:BASH:bash:Bash:1005" | sed 's/bash/ksh/gi' -> userE:ksh:ksh:ksh:1005
+----------------------------------------------------------------------------------------
+
+
+[root@krosumlabs DAY4]# sed -n 's/sales/CRM/p' emp.csv
+101,raj,CRM,pune,1000
+894,sai,CRM,bglore,3421
+324,shan,CRM,hyd,8900
+634,karthik,CRM,bglore,3890
+456,arun,CRM,mumbai,8923
+[root@krosumlabs DAY4]# echo "userA:bash:1001"|sed 's/bash/ksh/'
+userA:ksh:1001
+[root@krosumlabs DAY4]# echo "userA:tcsh:1001"|sed 's/bash/ksh/'
+userA:tcsh:1001
+[root@krosumlabs DAY4]# echo "userA:tcsh:1001"|sed -n 's/bash/ksh/p'
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# sed -n 's/sales/CRM/w r1.log' emp.csv
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# cat r1.log
+101,raj,CRM,pune,1000
+894,sai,CRM,bglore,3421
+324,shan,CRM,hyd,8900
+634,karthik,CRM,bglore,3890
+456,arun,CRM,mumbai,8923
+[root@krosumlabs DAY4]#
+
+########################################
+
+[root@krosumlabs DAY4]# cat -n IP
+     1  raj,sales,sales,sales,sales
+     2  sales,leo,sales,sales
+     3  vijay,sales,sales,sales,sales
+     4  SALES,Sales,sales,sales,sales
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# sed 's/sales/***/' IP
+raj,***,sales,sales,sales
+***,leo,sales,sales
+vijay,***,sales,sales,sales
+SALES,Sales,***,sales,sales
+[root@krosumlabs DAY4]# sed 's/sales/***/2' IP
+raj,sales,***,sales,sales
+sales,leo,***,sales
+vijay,sales,***,sales,sales
+SALES,Sales,sales,***,sales
+[root@krosumlabs DAY4]# sed 's/sales/***/2i' IP
+raj,sales,***,sales,sales
+sales,leo,***,sales
+vijay,sales,***,sales,sales
+SALES,***,sales,sales,sales
+[root@krosumlabs DAY4]# sed 's/sales/***/2ig' IP
+raj,sales,***,***,***
+sales,leo,***,***
+vijay,sales,***,***,***
+SALES,***,***,***,***
+[root@krosumlabs DAY4]# sed 's/sales/***/3ig' IP
+raj,sales,sales,***,***
+sales,leo,sales,***
+vijay,sales,sales,***,***
+SALES,Sales,***,***,***
+[root@krosumlabs DAY4]#
+##############################################################################
+
+[root@krosumlabs DAY4]# cat -n emp.csv
+     1  101,raj,sales,pune,1000
+     2  102,leo,prod,bglore,2000
+     3  450,raj,prod,pune,2340
+     4  590,anu,HR,bglore,3123
+     5  894,sai,sales,bglore,3421
+     6  849,anu,prod,noida,4923
+     7  324,shan,sales,hyd,8900
+     8  569,kumar,prod,pune,8903
+     9  634,karthik,sales,bglore,3890
+    10  784,theeb,Hr,chennai,7892
+    11  734,rao,hr,hyd,8923
+    12  456,arun,sales,mumbai,8923
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# sed 's/sales/***/' emp.csv
+101,raj,***,pune,1000
+102,leo,prod,bglore,2000
+450,raj,prod,pune,2340
+590,anu,HR,bglore,3123
+894,sai,***,bglore,3421
+849,anu,prod,noida,4923
+324,shan,***,hyd,8900
+569,kumar,prod,pune,8903
+634,karthik,***,bglore,3890
+784,theeb,Hr,chennai,7892
+734,rao,hr,hyd,8923
+456,arun,***,mumbai,8923
+[root@krosumlabs DAY4]# sed -n '1,5p' emp.csv
+101,raj,sales,pune,1000
+102,leo,prod,bglore,2000
+450,raj,prod,pune,2340
+590,anu,HR,bglore,3123
+894,sai,sales,bglore,3421
+[root@krosumlabs DAY4]# sed '1,5s/sales/***/' emp.csv
+101,raj,***,pune,1000
+102,leo,prod,bglore,2000
+450,raj,prod,pune,2340
+590,anu,HR,bglore,3123
+894,sai,***,bglore,3421
+849,anu,prod,noida,4923
+324,shan,sales,hyd,8900
+569,kumar,prod,pune,8903
+634,karthik,sales,bglore,3890
+784,theeb,Hr,chennai,7892
+734,rao,hr,hyd,8923
+456,arun,sales,mumbai,8923
+[root@krosumlabs DAY4]# sed '5s/sales/***/' emp.csv
+101,raj,sales,pune,1000
+102,leo,prod,bglore,2000
+450,raj,prod,pune,2340
+590,anu,HR,bglore,3123
+894,sai,***,bglore,3421
+849,anu,prod,noida,4923
+324,shan,sales,hyd,8900
+569,kumar,prod,pune,8903
+634,karthik,sales,bglore,3890
+784,theeb,Hr,chennai,7892
+734,rao,hr,hyd,8923
+456,arun,sales,mumbai,8923
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# cat -n IP
+     1  raj,sales,sales,sales,sales
+     2  sales,leo,sales,sales
+     3  vijay,sales,sales,sales,sales
+     4  SALES,Sales,sales,sales,sales
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# sed 's/sales/***/2' IP
+raj,sales,***,sales,sales
+sales,leo,***,sales
+vijay,sales,***,sales,sales
+SALES,Sales,sales,***,sales
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# sed '2s/sales/***/2' IP
+raj,sales,sales,sales,sales
+sales,leo,***,sales
+vijay,sales,sales,sales,sales
+SALES,Sales,sales,sales,sales
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# sed -n '2s/sales/***/2p' IP
+sales,leo,***,sales	        |            |____2nd occurance 
+[root@krosumlabs DAY4]#		|
+				2nd Line
+=========================================================================
+
+sed '/pattern/s/oldPattern/Replace/' inputFile
+    -----|--------------------------
+	 |__LineNumber
+	 |__/Text/
+[root@krosumlabs DAY4]# cat -n emp.csv
+     1  101,raj,sales,pune,1000
+     2  102,leo,prod,bglore,2000
+     3  450,raj,prod,pune,2340
+     4  590,anu,HR,bglore,3123
+     5  894,sai,sales,bglore,3421
+     6  849,anu,prod,noida,4923
+     7  324,shan,sales,hyd,8900
+     8  569,kumar,prod,pune,8903
+     9  634,karthik,sales,bglore,3890
+    10  784,theeb,Hr,chennai,7892
+    11  734,rao,hr,hyd,8923
+    12  456,arun,sales,mumbai,8923
+[root@krosumlabs DAY4]# sed -n 's/bglore/HYDERABAD/p' emp.csv
+102,leo,prod,HYDERABAD,2000
+590,anu,HR,HYDERABAD,3123
+894,sai,sales,HYDERABAD,3421
+634,karthik,sales,HYDERABAD,3890
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# sed -n '/sales/s/bglore/HYDERABAD/p' emp.csv
+894,sai,sales,HYDERABAD,3421
+634,karthik,sales,HYDERABAD,3890
+[root@krosumlabs DAY4]#
+--------------------------------------------------------------------------
+
+
+[root@krosumlabs DAY4]# ps
+  PID TTY          TIME CMD
+ 1218 pts/0    00:00:00 bash
+ 1577 pts/0    00:00:00 ps
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# ps|sed '/bash/d'
+  PID TTY          TIME CMD
+ 1578 pts/0    00:00:00 ps
+ 1579 pts/0    00:00:00 sed
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# ps|sed '/bash/c -'
+  PID TTY          TIME CMD
+-
+ 1580 pts/0    00:00:00 ps
+ 1581 pts/0    00:00:00 sed
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# ps|sed 's/bash//'
+  PID TTY          TIME CMD
+ 1218 pts/0    00:00:00
+ 1582 pts/0    00:00:00 ps
+ 1583 pts/0    00:00:00 sed
+[root@krosumlabs DAY4]# echo "101,userA,sales,pune"|sed 's/sales//'
+101,userA,,pune
+[root@krosumlabs DAY4]# echo "101,userA,sales,pune"|sed 's/sales.//'
+101,userA,pune
+[root@krosumlabs DAY4]# r=`echo "101,userA,sales,pune"|sed 's/sales.//'`
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# echo $r
+101,userA,pune
+[root@krosumlabs DAY4]#
+-----------------------------------------------------------------------------------
+[root@krosumlabs DAY4]# grep "^[1-5].*sales" emp.csv
+101,raj,sales,pune,1000
+324,shan,sales,hyd,8900
+456,arun,sales,mumbai,8923
+[root@krosumlabs DAY4]# sed '/^[1-5].*sales/s/sales/CRM/' emp.csv
+101,raj,CRM,pune,1000
+102,leo,prod,bglore,2000
+450,raj,prod,pune,2340
+590,anu,HR,bglore,3123
+894,sai,sales,bglore,3421
+849,anu,prod,noida,4923
+324,shan,CRM,hyd,8900
+569,kumar,prod,pune,8903
+634,karthik,sales,bglore,3890
+784,theeb,Hr,chennai,7892
+734,rao,hr,hyd,8923
+456,arun,CRM,mumbai,8923
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# sed -n '/^[1-5].*sales/s/sales/CRM/p' emp.csv
+101,raj,CRM,pune,1000
+324,shan,CRM,hyd,8900
+456,arun,CRM,mumbai,8923
+[root@krosumlabs DAY4]#
+-----------------------------------------------------------------------------
+
+[root@krosumlabs DAY4]# fname="/etc/passwd"
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# ls -l /etc/passwd
+-rw-r--r--. 1 root root 1271 Feb  4 15:23 /etc/passwd
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# echo $fname|sed 's/^/ls -l/'
+ls -l/etc/passwd
+[root@krosumlabs DAY4]# echo $fname|sed 's/$/ls -l/'
+/etc/passwdls -l
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# echo $fname|sed 's/^/ls -l /'
+ls -l /etc/passwd
+[root@krosumlabs DAY4]#
+
+-----------------------------------------------------------------------------------
+
+&
+--
+ |->capture old pattern 
+ 
+ |->in sed - substitute
+
+[root@krosumlabs DAY4]# ps|sed 's/bash/((bash))/'
+  PID TTY          TIME CMD
+ 1218 pts/0    00:00:00 ((bash))
+ 1612 pts/0    00:00:00 ps
+ 1613 pts/0    00:00:00 sed
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# ps|sed 's/bash/((&))/'
+  PID TTY          TIME CMD
+ 1218 pts/0    00:00:00 ((bash))
+ 1614 pts/0    00:00:00 ps
+ 1615 pts/0    00:00:00 sed
+[root@krosumlabs DAY4]#
+
+
+[root@krosumlabs DAY4]# ps|sed 's/bash/((bash))/'
+  PID TTY          TIME CMD
+ 1218 pts/0    00:00:00 ((bash))
+ 1612 pts/0    00:00:00 ps
+ 1613 pts/0    00:00:00 sed
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# ps|sed 's/bash/((&))/'
+  PID TTY          TIME CMD
+ 1218 pts/0    00:00:00 ((bash))
+ 1614 pts/0    00:00:00 ps
+ 1615 pts/0    00:00:00 sed
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# ps|sed 's/bash/<< & >>/'
+  PID TTY          TIME CMD
+ 1218 pts/0    00:00:00 << bash >>
+ 1616 pts/0    00:00:00 ps
+ 1617 pts/0    00:00:00 sed
+[root@krosumlabs DAY4]# ps|sed 's/bash/[[ & ]]/'
+  PID TTY          TIME CMD
+ 1218 pts/0    00:00:00 [[ bash ]]
+ 1618 pts/0    00:00:00 ps
+ 1619 pts/0    00:00:00 sed
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# ps|sed 's/^12.*/[[ & ]]/'
+  PID TTY          TIME CMD
+ 1218 pts/0    00:00:00 bash
+ 1620 pts/0    00:00:00 ps
+ 1621 pts/0    00:00:00 sed
+[root@krosumlabs DAY4]# ps|sed 's/^.12.*/[[ & ]]/'
+  PID TTY          TIME CMD
+[[  1218 pts/0    00:00:00 bash ]]
+ 1622 pts/0    00:00:00 ps
+ 1623 pts/0    00:00:00 sed
+[root@krosumlabs DAY4]#
+#############################################################################
+
+execute(e)
+----------
+ |->execute shell command
+
+
+[root@krosumlabs DAY4]# cat >cmdlist
+date
+uptime
+ps -f
+[root@krosumlabs DAY4]# sed 'e' cmdlist
+Thu Feb  6 12:52:28 IST 2025
+ 12:52:28 up  3:52,  3 users,  load average: 0.00, 0.01, 0.05
+UID        PID  PPID  C STIME TTY          TIME CMD
+root      1218  1214  0 09:32 pts/0    00:00:00 -bash
+root      1627  1218  0 12:52 pts/0    00:00:00 sed e cmdlist
+root      1630  1627  0 12:52 pts/0    00:00:00 ps -f
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# sed -e 'e' cmdlist -ne 'w r1.log'
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# cat r1.log
+Thu Feb  6 12:53:01 IST 2025
+ 12:53:01 up  3:53,  3 users,  load average: 0.00, 0.01, 0.05
+UID        PID  PPID  C STIME TTY          TIME CMD
+root      1218  1214  0 09:32 pts/0    00:00:00 -bash
+root      1631  1218  0 12:53 pts/0    00:00:00 sed -e e cmdlist -ne w r1.log
+root      1634  1631 99 12:53 pts/0    00:00:00 ps -f
+[root@krosumlabs DAY4]#
+
+print(p)
+write(w)
+----------// -n option is required
+
+delete(d) substitute(s)
+insert(i) append(a) change(c)
+
+execute(e)
+-------------------------------------------
+-i   -> overwrite sed action to inputFile <== take backup
+
+[root@krosumlabs DAY4]# cp emp.csv e1.csv
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# sed 's/sales/(( & ))/' e1.csv
+101,raj,(( sales )),pune,1000
+102,leo,prod,bglore,2000
+450,raj,prod,pune,2340
+590,anu,HR,bglore,3123
+894,sai,(( sales )),bglore,3421
+849,anu,prod,noida,4923
+324,shan,(( sales )),hyd,8900
+569,kumar,prod,pune,8903
+634,karthik,(( sales )),bglore,3890
+784,theeb,Hr,chennai,7892
+734,rao,hr,hyd,8923
+456,arun,(( sales )),mumbai,8923
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# sed '1i -----------------' e1.csv
+-----------------
+101,raj,sales,pune,1000
+102,leo,prod,bglore,2000
+450,raj,prod,pune,2340
+590,anu,HR,bglore,3123
+894,sai,sales,bglore,3421
+849,anu,prod,noida,4923
+324,shan,sales,hyd,8900
+569,kumar,prod,pune,8903
+634,karthik,sales,bglore,3890
+784,theeb,Hr,chennai,7892
+734,rao,hr,hyd,8923
+456,arun,sales,mumbai,8923
+[root@krosumlabs DAY4]# cat e1.csv
+101,raj,sales,pune,1000
+102,leo,prod,bglore,2000
+450,raj,prod,pune,2340
+590,anu,HR,bglore,3123
+894,sai,sales,bglore,3421
+849,anu,prod,noida,4923
+324,shan,sales,hyd,8900
+569,kumar,prod,pune,8903
+634,karthik,sales,bglore,3890
+784,theeb,Hr,chennai,7892
+734,rao,hr,hyd,8923
+456,arun,sales,mumbai,8923
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# sed -i '1i -----------------' e1.csv
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# cat e1.csv
+-----------------
+101,raj,sales,pune,1000
+102,leo,prod,bglore,2000
+450,raj,prod,pune,2340
+590,anu,HR,bglore,3123
+894,sai,sales,bglore,3421
+849,anu,prod,noida,4923
+324,shan,sales,hyd,8900
+569,kumar,prod,pune,8903
+634,karthik,sales,bglore,3890
+784,theeb,Hr,chennai,7892
+734,rao,hr,hyd,8923
+456,arun,sales,mumbai,8923
+[root@krosumlabs DAY4]# sed -i '3,7d' e1.csv
+[root@krosumlabs DAY4]# cat e1.csv
+-----------------
+101,raj,sales,pune,1000
+324,shan,sales,hyd,8900
+569,kumar,prod,pune,8903
+634,karthik,sales,bglore,3890
+784,theeb,Hr,chennai,7892
+734,rao,hr,hyd,8923
+456,arun,sales,mumbai,8923
+[root@krosumlabs DAY4]# sed -i 's/sales/<<--- & --->>/' e1.csv
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# cat e1.csv
+-----------------
+101,raj,<<--- sales --->>,pune,1000
+324,shan,<<--- sales --->>,hyd,8900
+569,kumar,prod,pune,8903
+634,karthik,<<--- sales --->>,bglore,3890
+784,theeb,Hr,chennai,7892
+734,rao,hr,hyd,8923
+456,arun,<<--- sales --->>,mumbai,8923
+[root@krosumlabs DAY4]#
+
+
+sed options
+--------------
+-n   -> suppress default print
+-e   -> allows multiple action(sed command) to execute
+-r   -> Enables ERE
+-f   -> attach pattern file to commandline
+-i   -> overwrite sed action to inputFile <== take backup
+
+##############################################################################
+
+grep				Vs		sed
+- search and print				- search substitue insert delete write
+- pattern: text					- pattern: /text/ and Linenumber
+- action: print(display)			- p w s d i a c e //sed commands
+
+##################################################################################
+
+tee - filter command
+----
+
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# ps >p1.log
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# ps|tee p2.log # create a p2.log write ps command results to p2.log file and duplicate ps command results to monitor
+  PID TTY          TIME CMD
+ 1218 pts/0    00:00:00 bash
+ 1670 pts/0    00:00:00 ps
+ 1671 pts/0    00:00:00 bash
+[root@krosumlabs DAY4]# cat p2.log
+  PID TTY          TIME CMD
+ 1218 pts/0    00:00:00 bash
+ 1670 pts/0    00:00:00 ps
+ 1671 pts/0    00:00:00 bash
+[root@krosumlabs DAY4]# uptime|tee p2.log
+ 13:06:18 up  4:06,  3 users,  load average: 0.19, 0.06, 0.06
+[root@krosumlabs DAY4]# cat p2.log
+ 13:06:18 up  4:06,  3 users,  load average: 0.19, 0.06, 0.06
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# ps|tee -a p2.log
+  PID TTY          TIME CMD
+ 1218 pts/0    00:00:00 bash
+ 1677 pts/0    00:00:00 ps
+ 1678 pts/0    00:00:00 tee
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# cat p2.log
+ 13:06:18 up  4:06,  3 users,  load average: 0.19, 0.06, 0.06
+  PID TTY          TIME CMD
+ 1218 pts/0    00:00:00 bash
+ 1677 pts/0    00:00:00 ps
+ 1678 pts/0    00:00:00 tee
+[root@krosumlabs DAY4]#
+--------------------------------------------------------------------------------------
+Q1.Write shell script 
+use commandline args  - test input file is existing or not
+
+Validation:
+./p1.sh < empty >
+
+./p1.sh p1.sh      -> input file p1.sh is same as p1.sh
+        -----
+
+./p1.sh <filename> <filename> ->single input file
+
+./p1.sh <filename> 
+		|->Yes ; no 
+.........................................................
+Q2. used_size=(150GB 100Gb 200Gb 300 G120)
+    |
+    Calculate sum of used size - display total size to monitor
+..........................................................
+Q3. Write shell script
+
+file:pt.sh
+--------------
+# single line comment
+echo "One"
+echo "Two"
+# --------
+uptime # display cpu loadbalance
+echo "--------"
+# test1
+# end of the line
+--------------------
+   |->read a pt.sh file
+   |->delete all the comments
+   |->delete all the empty lines
+   |->execute a command ->write command results to external file.
+# use sed
+----------
+
+[root@krosumlabs DAY4]# sed 's/#.*//' pt.sh
+
+echo "One"
+echo "Two"
+
+uptime
+echo "--------"
+
+
+
+[root@krosumlabs DAY4]# sed -e 's/#.*//' pt.sh -e '/^$/d'
+echo "One"
+echo "Two"
+uptime
+echo "--------"
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# sed -e 's/#.*//' pt.sh -e '/^$/d' -e 'e'
+One
+Two
+ 14:47:32 up  5:47,  3 users,  load average: 0.00, 0.01, 0.05
+--------
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# sed -e 's/#.*//' pt.sh -e '/^$/d' -e 'e' -ne 'w r1.log'
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# cat r1.log
+One
+Two
+ 14:47:39 up  5:47,  3 users,  load average: 0.00, 0.01, 0.05
+--------
+[root@krosumlabs DAY4]#
+####################################################################################
+
+ +---------------------+
+ | Sno  | Item  |Cost  |
+ +------|-------|------+
+ |  1   | demo1 | 1000 |
+ |  2   | demo2 | 2300 |
+ |  3   | demo3 | 1500 |
+ |  4   | demo4 | 2000 |
+ +---------------------+
+
+
+ +----------------------+
+ | Sno  | Item  |Cost   |
+ +------|-------|-------+
+ |  1   | demo1 | $1000 |
+ |  2   | demo2 | $2300 |
+ |  3   | demo3 | $1500 |
+ |  4   | demo4 | $2000 |
+ +----------------------+
+
+
+
+
+[root@krosumlabs DAY4]# sed -r 's/[0-9]{4}/$&/' menu_list
+
+ +---------------------+
+ | Sno  | Item  |Cost  |
+ +------|-------|------+
+ |  1   | demo1 | $1000 |
+ |  2   | demo2 | $2300 |
+ |  3   | demo3 | $1500 |
+ |  4   | demo4 | $2000 |
+ +---------------------+
+
+[root@krosumlabs DAY4]#
+
+########################################################################################
+
+grep
+-----
+grep -option pattern inputFile
+pattern: text
+action: search & print
+
+
+sed
+----
+sed -option 'patternAction' inputFile
+		    
+pattern:
+--------
+	|->LineNumber (or) address 
+	|->Text (or) string    ------>/pattern/
+
+Actions: print(p) write(w)  delete(d) substitute(s) insert(i) change(c)
+	 execute(e) append(a)
+
+awk
+----
+awk -option '/pattern/{Action}' inputFile
+pattern:text
+action:print
+
+awk -> search + formatted style report
+		------------------------//table = (rows X cols)
+			
+awk ->supports programming style (variable;operators;conditional;loop;functions)
+				 -------------------------------------------------
+
+awk internal operation
+-------------------------
+READ - read data from <FILE> - line by line - record buffer
+|
+SPLIT - split each line into mutliple columns based on sep. -F<sep>
+	-F ->input field separator
+	-F"<sep>"
+	- default field sep is space
+|
+search - search a pattern
+|
+action - print 
+
+IP.txt
+---------
+101:userA:bash
+102:userB:ksh
+103:userC:bash
+--------------------
+
+awk -F: '/bash/{print}' IP.txt
+
+step 1:
+--------
+	1 101:userA:bash
+	-----------------
+	2 102:userB:ksh
+	-----------------
+	3 103:userC:bash
+	-----------------
+
+
+step 2:  split eachline into multiple columns  -F:
+--------
+	1 101|userA|bash
+	-----|-----|-----
+	2 102|userB|ksh
+	-----|-----|-----
+	3 103|userC|bash
+	-----|-----|-----
+
+	   $1   $2   $3 (or) $NF     last column ->$NF
+	------------------|
+	1 101|userA|bash  |
+	-----|-----|------|
+	2 102|userB|ksh   |
+	-----|-----|------|
+	3 103|userC|bash  |
+	|----|-----|------|
+	| |<--- $0 ------>|
+	|
+	NR
+
+
+STEP 3: search a pattern
+|
+STEP 4: action
+
+
+awk -F: '/bash/{print NR,$1,$NF}' IP.txt
+------------------------------------
+1 101 bash
+3 103 bash
+------------------------------------
+ 
+In awk IFS and OFS default field sep is space
+
+OFS="sepValue"
+
+awk -F: '/bash/{OFS="\t";print NR,$1,$NF}' IP.txt
+------------------------------------
+1	101	bash
+3	103	bash
+------------------------------------
+
+
+Write shell script
+|
+create a menulist
+|
+use - select loop
+
+memory 
+ |->used - function 
+ |->free ..
+ |->total ..
+
+
+
+PS3="Select your choice:"
+
+f(){
+    t=0
+    for var in $@
+    do
+        t=`expr $var + $t`
+    done
+}
+
+select menu in total used free quit
+do
+        case $menu in
+        total)  T=(`free -m|sed '1d'|awk '{print $2}'`)
+                f ${T[@]} # function call with args
+                echo "Total Memory:$t MB"
+                ;;
+        used) U=(`free -m|sed '1d'|awk '{print $3}'`)
+              f ${U[@]}
+              echo "Total Used Memory:$t MB"
+                ;;
+        free) F=(`free -m|sed '1d'|awk '{print $4}'`)
+              f ${F[@]}
+              echo "Total Free Memory:$t MB"
+                ;;
+        quit) echo "Thank you!!!" ;break ;;
+        *) echo "Invalid Choice"
+           echo "Press Enter-Key"
+        esac
+done
+==========================================================================
+awk supports regx (BRE;ERE)
+-------------------------------
+
+[root@krosumlabs DAY4]# ps -e|awk '/^[[:space:]]+[0-9].*(login|cron).*[a-z]$/{OFS="\t";print $NF,$1}'
+
+systemd-logind  694
+crond   703
+
+[root@krosumlabs DAY4]#
+
+
+
+/proc <== directory	 / <== directory
+-|-----------------------|-----
+proc <== filesystem  => xfs
+-----------------------------
+|			|
+CPU RAM <== H/W	  =>  HardDisk
+
+ls -l|sed '1d'|awk '{OFS=",";print $NF,$5}' >fs.csv
+
+sed '1i filename,filesize' fs.csv <== insert new line to an existing file
+filename,filesize
+a.txt,23
+b.txt,26
+
+#####################################################################################
+Filter top 10 largest file size 
+-------------------------------------
+ls -l|sed '1d'|awk '{print $NF,$5}'|sort -nrk 2|sed -n '1,10p'
+		
+------------------------------------------------------------------------------------
+
+
+[root@krosumlabs DAY4]# sed 's/[[:punct:]]//' IP
+101prod1:1000(x
+102prod2-2000|y
+103prod3(3000,x
+104prod4:4000(y
+[root@krosumlabs DAY4]# sed 's/[[:punct:]]/ /g' IP
+101 prod1 1000 x
+102 prod2 2000 y
+103 prod3 3000 x
+104 prod4 4000 y
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# sed 's/[[:punct:]]/ /g' IP >IP1
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# cat IP1
+101 prod1 1000 x
+102 prod2 2000 y
+103 prod3 3000 x
+104 prod4 4000 y
+[root@krosumlabs DAY4]# awk '{print $1}' IP1
+101
+102
+103
+104
+[root@krosumlabs DAY4]# awk '{print $2}' IP1
+prod1
+prod2
+prod3
+prod4
+[root@krosumlabs DAY4]#
+###################################################################################
+
+awk supports arithmetic , relational ,logical operations
+------------ ============== ===========================
+
+
+[root@krosumlabs DAY4]# cat -n p8
+     1
+     2  read -p "Enter a v1 value:" v1
+     3  read -p "Enter a v2 value:" v2
+     4
+     5  echo $v1 $v2|awk '{print $1+$2}'
+     6
+     7  t=`echo $v1 $v2|awk '{print $1+$2}'`
+     8  echo "Total=$t"
+     9
+    10  t=`echo $v1 $v2|awk '{print $1*$2}'`
+    11  echo "Total=$t"
+    12
+    13
+[root@krosumlabs DAY4]# ./p8
+Enter a v1 value:15.32
+Enter a v2 value:23.13
+38.45
+Total=38.45
+Total=354.352
+----------------------------------------------------------------------
+
+[root@krosumlabs DAY4]# cat -n emp.csv
+     1  101,raj,sales,pune,1000
+     2  102,leo,prod,bglore,2000
+     3  450,raj,prod,pune,2340
+     4  590,anu,HR,bglore,3123
+     5  894,sai,sales,bglore,3421
+     6  849,anu,prod,noida,4923
+     7  324,shan,sales,hyd,8900
+     8  569,kumar,prod,pune,8903
+     9  634,karthik,sales,bglore,3890
+    10  784,theeb,Hr,chennai,7892
+    11  734,rao,hr,hyd,8923
+    12  456,arun,sales,mumbai,8923
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# awk -F, '/sales/{print NR,$2,$3,$NF,$NF*0.18}' emp.csv
+1 raj sales 1000 180
+5 sai sales 3421 615.78
+7 shan sales 8900 1602
+9 karthik sales 3890 700.2
+12 arun sales 8923 1606.14
+------------------------------------------------------------------------------
+Relational operators
+------------------------
+
+[root@krosumlabs DAY4]# awk -F, '/sales/{print}' emp.csv
+101,raj,sales,pune,1000
+894,sai,sales,bglore,3421
+324,shan,sales,hyd,8900
+634,karthik,sales,bglore,3890
+456,arun,sales,mumbai,8923
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# awk -F, '$3 == "sales"{print}' emp.csv
+101,raj,sales,pune,1000
+894,sai,sales,bglore,3421
+324,shan,sales,hyd,8900
+634,karthik,sales,bglore,3890
+456,arun,sales,mumbai,8923
+[root@krosumlabs DAY4]# awk -F, '$NF >5000{print}' emp.csv
+324,shan,sales,hyd,8900
+569,kumar,prod,pune,8903
+784,theeb,Hr,chennai,7892
+734,rao,hr,hyd,8923
+456,arun,sales,mumbai,8923
+[root@krosumlabs DAY4]# awk -F, '$NF <8000{print}' emp.csv
+101,raj,sales,pune,1000
+102,leo,prod,bglore,2000
+450,raj,prod,pune,2340
+590,anu,HR,bglore,3123
+894,sai,sales,bglore,3421
+849,anu,prod,noida,4923
+634,karthik,sales,bglore,3890
+784,theeb,Hr,chennai,7892
+[root@krosumlabs DAY4]# awk -F, '$NF >5000 && $NF<8000{print}' emp.csv
+784,theeb,Hr,chennai,7892
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# echo 15.23|awk '$1 >10.45{print "True"}'
+True
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# cat -n emp.csv |sed -n '3p'
+     3  450,raj,prod,pune,2340
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# cat -n emp.csv |sed -n '3,5p'
+     3  450,raj,prod,pune,2340
+     4  590,anu,HR,bglore,3123
+     5  894,sai,sales,bglore,3421
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# cat -n emp.csv |sed -n -e '3p' -e '5p'
+     3  450,raj,prod,pune,2340
+     5  894,sai,sales,bglore,3421
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# awk 'NR == 3{print}' emp.csv
+450,raj,prod,pune,2340
+[root@krosumlabs DAY4]# awk 'NR == 3{print NR}' emp.csv
+3
+[root@krosumlabs DAY4]# awk 'NR == 3{print NR,$0}' emp.csv
+3 450,raj,prod,pune,2340
+[root@krosumlabs DAY4]# awk 'NR >2 && NR <=5{print NR,$0}' emp.csv
+3 450,raj,prod,pune,2340
+4 590,anu,HR,bglore,3123
+5 894,sai,sales,bglore,3421
+[root@krosumlabs DAY4]#
+[root@krosumlabs DAY4]# awk 'NR == 3 || NR ==5{print NR,$0}' emp.csv
+3 450,raj,prod,pune,2340
+5 894,sai,sales,bglore,3421
+[root@krosumlabs DAY4]#
+
+
+[root@krosumlabs DAY4]# awk -F, 'NR == 7 {print $3}' emp.csv # Row X Col
+sales
+[root@krosumlabs DAY4]# awk -F, 'NR >= 7 {print $3}' emp.csv # Row X Col
+sales
+prod
+sales
+Hr
+hr
+sales
+[root@krosumlabs DAY4]# awk -F, 'NR >= 7 {print $3,$4}' emp.csv # Row X Col
+sales hyd
+prod pune
+sales bglore
+Hr chennai
+hr hyd
+sales mumbai
+################################################################################
+
+awk variables
+----------------
+NR - record number
+NF - total no.of fields
+$NF - last column
+
+OFS - output field separator (default OFS is space)
+FS - input field separator (default FS is space)  -F<sep>
+
+RS - input record separator (default RS is \n)
+ORS - output record separator (default ORS is \n)
+
+
+
+[root@krosumlabs DAY4]# ps|awk '{ORS="\n--\n";OFS="\t";print $1,$2,$3,$4}'
+PID     TTY     TIME    CMD
+--
+1218    pts/0   00:00:00        bash
+--
+2322    pts/0   00:00:00        ps
+--
+2323    pts/0   00:00:00        awk
+--
+[root@krosumlabs DAY4]#
+
+
+
+[root@krosumlabs DAY4]# ps|awk '{ORS="-";OFS="\t";print $1,$2,$3,$4}'
+PID     TTY     TIME    CMD-1218        pts/0   00:00:01        bash-2324       pts/0    00:00:00        ps-2325 pts/0   00:00:00        awk-
+-------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
