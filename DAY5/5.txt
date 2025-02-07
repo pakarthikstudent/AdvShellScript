@@ -1,0 +1,848 @@
+awk
+----
+awk -option '/pattern/{action}' inputFile
+
+awk supports regx(BRE+ERE)
+|
+print - default action
+-----
+ |->awk command
+-----------------------------------------------------------------------
+
+[root@krosumlabs DAY5]# date|wc -l
+1
+[root@krosumlabs DAY5]# date|awk '{print NR,$0}'
+1 Fri Feb  7 09:38:53 IST 2025
+[root@krosumlabs DAY5]#
+[root@krosumlabs DAY5]# date|awk '{ORS="\n--\n";print NR,$0}'
+1 Fri Feb  7 09:39:00 IST 2025
+--
+[root@krosumlabs DAY5]# ps|awk '{ORS="\n--\n";print NR,$0}'
+1   PID TTY          TIME CMD
+--
+2  1235 pts/0    00:00:00 bash
+--
+3  1276 pts/0    00:00:00 ps
+--
+4  1277 pts/0    00:00:00 awk
+--
+[root@krosumlabs DAY5]# cp ../DAY4/emp.csv .
+[root@krosumlabs DAY5]# awk -F, '/sales/{print NR,$2,$NF}' emp.csv
+1 raj 1000
+5 sai 3421
+7 shan 8900
+9 karthik 3890
+12 arun 8923
+[root@krosumlabs DAY5]# awk -F, '/sales/{OFS="\t";print NR,$2,$NF}' emp.csv
+1       raj     1000
+5       sai     3421
+7       shan    8900
+9       karthik 3890
+12      arun    8923
+[root@krosumlabs DAY5]#
+[root@krosumlabs DAY5]#
+[root@krosumlabs DAY5]# awk -F, '/sales/{OFS="\t";print NR,$2,$NF}' emp.csv
+1       raj     1000
+5       sai     3421
+7       shan    8900
+9       karthik 3890
+12      arun    8923
+[root@krosumlabs DAY5]#
+[root@krosumlabs DAY5]# awk -F, '/sales/{printf("%d\t%s\t%f\n",NR,$2,$NF)}' emp.csv
+1       raj     1000.000000
+5       sai     3421.000000
+7       shan    8900.000000
+9       karthik 3890.000000
+12      arun    8923.000000
+[root@krosumlabs DAY5]# awk -F, '/sales/{printf("%d\t%s\t%0.2f\n",NR,$2,$NF)}' emp.csv
+1       raj     1000.00
+5       sai     3421.00
+7       shan    8900.00
+9       karthik 3890.00
+12      arun    8923.00
+[root@krosumlabs DAY5]#
+---------------------------------------------------------------------------------------
+
+[root@krosumlabs DAY5]# awk -F, '/sales/{print}'
+^C
+[root@krosumlabs DAY5]# awk '{print "Hello"}'
+^C
+[root@krosumlabs DAY5]# awk 'BEGIN{print "Hello"}'
+Hello
+[root@krosumlabs DAY5]# df|wc -l
+8
+[root@krosumlabs DAY5]# df|awk '{print "Hello"}'
+Hello
+Hello
+Hello
+Hello
+Hello
+Hello
+Hello
+Hello
+[root@krosumlabs DAY5]# df|awk 'BEGIN{print "Hello"}'
+Hello
+[root@krosumlabs DAY5]#
+===============================================================================
+
+awk variables
+-----------------
+Syntax:-
+---------
+variablename = value
+
+[root@krosumlabs DAY5]# cat >p2.awk
+BEGIN{
+myapp = "Flask"  # Vs   myapp="Flask" -> $myapp
+print myapp
+print "myapp" # string
+print "App name is:myapp"
+print "App name is:",myapp
+}
+[root@krosumlabs DAY5]# awk -f p2.awk
+Flask
+myapp
+App name is:myapp
+App name is: Flask
+[root@krosumlabs DAY5]# ps|awk '{OFS="\t";print $NF,$1}'
+CMD     PID
+bash    1235
+ps      1364
+awk     1365
+[root@krosumlabs DAY5]# ps|awk '{OFS="\t";print "$NF,$1"}'
+$NF,$1
+$NF,$1
+$NF,$1
+$NF,$1
+[root@krosumlabs DAY5]#
+
+############################################################################
+awk - conditional statement
+----------------------------
+like C program style syntax:-
+if(condition){
+  True only
+}
+
+if(condition){
+  True only
+}else{
+  False only
+}
+if(condition1){
+  ..
+}elseif(condition2){
+  ..
+}
+
+[root@krosumlabs DAY5]# awk -F, '$3 == "sales" {print NR,$0}' emp.csv
+1 101,raj,sales,pune,1000
+5 894,sai,sales,bglore,3421
+7 324,shan,sales,hyd,8900
+9 634,karthik,sales,bglore,3890
+12 456,arun,sales,mumbai,8923
+[root@krosumlabs DAY5]# awk -F, '$NF >5000 {print NR,$0}' emp.csv
+7 324,shan,sales,hyd,8900
+8 569,kumar,prod,pune,8903
+10 784,theeb,Hr,chennai,7892
+11 734,rao,hr,hyd,8923
+12 456,arun,sales,mumbai,8923
+[root@krosumlabs DAY5]# awk -F, '$NF >5000 && $NF <8000 {print NR,$0}' emp.csv
+10 784,theeb,Hr,chennai,7892
+[root@krosumlabs DAY5]#
+
+[root@krosumlabs DAY5]# cat -n p3.awk
+     1  BEGIN{
+     2  port = 5000
+     3  if(port >= 5000){
+     4          print "True block"
+     5          app = "Flask"
+     6  }else{
+     7          print "False block"
+     8          app = "TestApp"
+     9  }
+    10  print "App name is:",app,"Running port number:",port
+    11  }
+[root@krosumlabs DAY5]#
+
+[root@krosumlabs DAY5]# awk -f p3.awk
+True block
+App name is: Flask Running port number: 5000
+[root@krosumlabs DAY5]#
+[root@krosumlabs DAY5]# cat p3.sh
+
+LB1=1.45
+LB2=0.26
+echo $LB1 $LB2|awk '{if($1 >$2){
+ print "OK"
+}else{
+ print "Not-Matched"
+}
+}'
+[root@krosumlabs DAY5]# cat p4.sh
+
+LB1=1.45
+LB2=0.26
+rv=`echo $LB1 $LB2|awk '{if($1 >$2){
+ print "0"
+}else{
+ print "1"
+}
+}'`
+
+if [ $rv -eq 0 ];then
+        echo "LB1 is High"
+else
+        echo "LB2 is High"
+fi
+[root@krosumlabs DAY5]#
+
+
+######################################################################################
+awk supports looping statements
+
+for 
+while
+do..while
+
+for(initialization;condition;++/--){}
+
+while(condition){
+	...
+	arithmetic
+}
+do{
+
+}while(condition)
+
+[root@krosumlabs DAY5]# cat -n p4.awk
+     1  BEGIN{
+     2  print "awk - looping statements:-"
+     3  print "--------------------------"
+     4
+     5  for(i=0;i<5;i++){
+     6    print "i value:",i
+     7  }
+     8  print "" # empty line
+     9
+    10  i=0
+    11  while(i<5){
+    12    print "i value:",i
+    13    i++
+    14  }
+    15  print "" # empty line
+    16  i=0
+    17  do{
+    18    print "i value:",i
+    19    i++
+    20  }while(i<5)
+    21  }
+#----------------------------------------------------------------
+
+
+[root@krosumlabs DAY5]# date|awk '{print NF}'
+6
+[root@krosumlabs DAY5]# date|awk -F: '{print NF}'
+3
+[root@krosumlabs DAY5]# date|awk '{for(i=1;i<= NF;i++) print i}'
+1
+2
+3
+4
+5
+6
+[root@krosumlabs DAY5]# date|awk '{for(i=1;i<= NF;i++) print $i}'
+Fri
+Feb
+7
+10:51:56
+IST
+2025
+[root@krosumlabs DAY5]# date|awk -F: '{for(i=1;i<= NF;i++) print $i}'
+Fri Feb  7 10
+52
+42 IST 2025
+---------------------------------------------------------------------
+ls -l *.awk|awk '{for(i=1; i<= NF;i++) print $i;print ""}'
+---------------------------------------------------------------------
+
+[root@krosumlabs DAY5]# echo date
+date
+[root@krosumlabs DAY5]# echo "date"
+date
+[root@krosumlabs DAY5]# echo `date`
+Fri Feb 7 10:59:18 IST 2025
+[root@krosumlabs DAY5]#
+[root@krosumlabs DAY5]# eval "date"
+Fri Feb  7 10:59:27 IST 2025
+[root@krosumlabs DAY5]# eval "Hello"
+-bash: Hello: command not found
+[root@krosumlabs DAY5]#
+[root@krosumlabs DAY5]# d=`eval "date"`
+[root@krosumlabs DAY5]# echo $d
+Fri Feb 7 10:59:59 IST 2025
+[root@krosumlabs DAY5]#
+#########################################################################################
+awk array
+----------
+   |->variable - holding more than value
+  
+Syntax:-
+----------
+	arrayname[index] = value
+		  ^^^^^
+		   user defined 
+
+arr[10] = "data1"
+arr[15] = "data2"
+arr[50] = "data3"
+arr["abc"] = 150
+
+print arr[10] ->data1
+print arr["abc"] ->150
+
+
+BEGIN{
+ arr[10] = "data1"
+arr[15] = "data2"
+arr[50] = "data3"
+arr["abc"] = 150
+
+ print arr[10]
+ print arr[15]
+ print arr[50]
+ print arr["abc"]
+ print "-->",arr["ABC"]
+ delete arr[50]
+ print "-->",arr[50]
+}
+[root@krosumlabs DAY5]# awk -f p5.awk
+data1
+data2
+data3
+150
+-->
+-->
+[root@krosumlabs DAY5]#
+########################################################################################
+awk array for loop
+
+for(index in Array){
+	Array[index]
+}
+for,in - keywords
+------   ---------
+
+Array,index - user defined
+
+
+BEGIN{
+ os[10] = "unix"
+ os[20] = "Linux"
+ os[30] = "minix"
+ os[40] = "aix"
+ os[50] = "Sunos"
+
+ #print os[10]
+ #print os[20]
+
+ for(x in os){
+        print x,os[x]
+ }
+}
+#####################################################################################
+system("command")
+printf()
+split()
+
+split(inputString,outputArray,fsep)
+      ^^^^^^^^^^^^ ---------  
+			|
+			for(x in Array){
+				Array[x]
+			}
+awk array index starts from 1  ->Arrayname[1] ... 
+
+
+
+BEGIN{
+s="root:x:bin:bash"
+print "Total no.of chars:",length(s)
+
+split(s,arr,":")
+for(x in arr){
+    print arr[x]
+}
+print "Total no.of item:",length(arr)
+}
+
+###############################################################################
+		
+InventoryFile
+
+file:inventory
+--------------------
+101:10,20,30,40,50
+102:100,200
+103:1000,2000,3000
+104:15,25,35
+105:10,20,30
+----------------------
+   |-> -F:   $1 ->itemCode
+	     $2 ->salesCount (ex:  10,20,30,40,50 )
+				   ---------------
+					|
+				  split($2,Arr,',') -> |10 | 20 | 30 |40 |50 |
+						        ------->----->--->----> 150
+
+Write awk script
+|
+input: inventory
+|
+FS=":" 
+|
+split - sales count value ->multiple values (array)
+|
+use for -> Calculate sum of sales count
+			
+Expected result
+-----------------
+ItemCode: 101	  TotalSales count:150
+ItemCode: 102     TotalSales count:300
+...
+--------------------------------------------------------
+awk builtin functions
+=====================
+printf()
+
+system("command")
+
+length(string) ->count No.of args
+length(array) ->Count No.of items
+
+toupper()
+tolower()
+
+split(inputString,outputArray,sep)
+----------------------------------------------------------
+
+awk usages
+-------------
+ 1. floating operation
+ 2. formatted style of results
+ 3. split() 
+-------------------------------
+"userA,345,USERA@host.com 1000" |awk '{print $1}' ->userA,345,USERA@host.com
+				|awk '{print $2}' ->1000
+
+ 
+"userA,345,USERA@host.com 1000" |awk '{split($1,arr,"[^a-zA-Z0-9]")}'
+						|
+					userA|345|USERA|host|com
+					  1  | 2 | 3   |  4 |  5 <== index
+
+------------------------------------------------------------------------------------
+
+Heredocument (or) Lineoriented document
+----------------------------------------
+Connection_Command<<Flag
+ ....
+ ....
+ .....
+Flag
+
+
+shell script			python
+- command			- DS+function+class,object
+    |-------------------------->   ......
+
+shell script			DB
+				SQL
+  - command --------------------->
+
+
+root@host~]# <DB-Connection> //command
+
+<DB-Connection><<Abc
+   <DBQuery>
+    ....
+Abc
+
+
+[root@krosumlabs DAY5]# sqlite3 Test2.db "create table T1(id INT,name TEXT)"
+[root@krosumlabs DAY5]# sqlite3 Test2.db "insert into T1(id,name) values(101,"ABC")"
+Error: no such column: ABC
+[root@krosumlabs DAY5]#
+[root@krosumlabs DAY5]# sqlite3 Test2.db "insert into T1(id,name) values(101,'ABC')"
+[root@krosumlabs DAY5]# sqlite3 Test2.db "insert into T1(id,name) values(102,'DAF')"
+[root@krosumlabs DAY5]# sqlite3 Test2.db "select *from T1"
+101|ABC
+102|DAF
+[root@krosumlabs DAY5]#
+
+
+sqlite3 Test2.db<<Abc
+ create table T1(id INT,name TEXT)
+ insert into T1(id,name) values(101,'ABC')
+ insert into T1(id,name) values(102,'DAF')
+ ..
+ select *from T1
+Abc
+------------
+result=`sqlite3 Test2.db<<Abc
+ create table T1(id INT,name TEXT)
+ insert into T1(id,name) values(101,'ABC')
+ insert into T1(id,name) values(102,'DAF')
+ ..
+ select *from T1
+Abc`
+..
+-------------------------------------------------
+ 
+result=(`sqlite3 Test2.db<<Abc
+ create table T1(id INT,name TEXT)
+ insert into T1(id,name) values(101,'ABC')
+ insert into T1(id,name) values(102,'DAF')
+ ..
+ select *from T1
+Abc`)
+
+arrayname=(`command`)
+|
+echo ${arrayname[@]}|awk ....
+
+
+[root@krosumlabs DAY5]# r=`sqlite3 Test2.db "select *from T1"`
+[root@krosumlabs DAY5]# echo $r
+101|ABC 102|DAF
+[root@krosumlabs DAY5]# echo "$r"
+101|ABC
+102|DAF
+[root@krosumlabs DAY5]# echo "$r"|awk '{print NF}'
+1
+1
+[root@krosumlabs DAY5]# r=(`sqlite3 Test2.db "select *from T1"`)
+[root@krosumlabs DAY5]# echo ${#r[@]}
+2
+[root@krosumlabs DAY5]# echo ${r[0]}
+101|ABC
+[root@krosumlabs DAY5]# echo ${r[1]}
+102|DAF
+[root@krosumlabs DAY5]#
+-------------------------------------------------------------------------------------
+
+Task:
+------
+sqlite3 
+
+DB="emp.db"
+|
+create a table - eid,ename,edept,ecity,ecost
+		 ---------------------------
+|
+read an emp.csv file 
+	- read line by line
+	|	
+	- split each line into multiple values - based on ,
+	  -------------------------------------------------
+	|
+	- insert splitted data to DB(insert query)
+	|
+	select your DB - display dB results to monitor and write to external file
+		    --		    -------------------------------------//tee filter
+		    ecost above 5000 - eid,ename,edept 
+					
+
+
+
+DB="emp.db"
+
+f1(){
+sqlite3 $DB<<EOF
+create table if not exists emptable(eid INT,ename TEXT,edept TEXT,ecity TEXT,ecost INT);
+EOF
+}
+f2(){
+sqlite3 $DB<<EOF
+ insert into emptable(eid,ename,edept,ecity,ecost) values($1,'$2','$3','$4',$5);
+EOF
+}
+f3(){
+r=`sqlite3 $DB<<EOF
+select *from emptable where ecost >5000;
+EOF`
+if [ -z "$r" ];then
+        echo "There is no record"
+else
+        echo "$r"
+fi
+}
+f1 # create table
+while read var
+do
+  va=`echo $var|cut -d, -f 1`
+  vb=`echo $var|cut -d, -f 2`
+  vc=`echo $var|cut -d, -f 3`
+  vd=`echo $var|cut -d, -f 4`
+  ve=`echo $var|cut -d, -f 5`
+  f2 $va $vb $vc $vd $ve # function call with args
+done<emp.csv
+f3
+###################################################################################
+
++---------------------------------+		+-------------------+
+	OL7						Ubuntu
+ IP:192.168.1.6					 IP:192.168.1.4
+ hostname:krosumlabs				 hostname:example
++---------------------------------+		+--------------------+
+	|______________________________________________|
+
+/etc/hosts					 /etc/hosts
+update remote IP
+example 192.168.1.4				krosumlabs 192.168.1.6
+|
+ping <remoteIP> (or) ping <hostname>
+# OK
+|_____________________________________________________|
+	
+ssh <remoteHost> (or) ssh <remoteIP>
+	|______________________|
+		|
+		/etc/hosts file
+
+/etc/hosts
+FQDN			IP		alias
+host01.example.com	192.168.1.234  host01
+
+ping host01.example.com
+ (or)
+ping 192.168.1.234
+ (or)
+ping host01
+
+ssh host01.example.com
+ <or>
+ssh 192.168.1.234
+  <or>
+ssh host01
+
+~/.ssh/known_hosts/
+...
+------------------------------------------------------------------------------
+
+How to start shell script automatically ?
+ <or>
+How to convert user process to system process ?
+		(shell script)  (shell script)
+
+ <or>
+How to start particular job automatically while os loading time?
+			|->(script)
+
+
+
+/bin/<file>
+	|->command - internal command
+
+/usr/bin/<file>
+	  |->command - external command <== installed command(file/package)
+
+/sbin/<file>
+	|---->command - root user only can execute
+
+/../bin/file
+	 |---->ELF - not readable file - executable file
+
+/bin/fileA <== executable file
+	|
+/etc/fileA.conf <== ASCII / text - readable file
+	
+
+/etc/fileA.conf
+	|
+	key=value
+
+
+root@host~]# /bin/fileA --config=/etc/fileA.conf {Enter}
+			------------------------
+		   ^   		|
+		   |____________|
+		
+
+service file - configuration file
+-------------
+	|->/etc/systemd/system/fileA.service
+				|
+				[Unit]
+				Description="Write your own description"
+				[Service]
+				ExecStart=/bin/fileA --config=/etc/fileA.conf
+				[Install]
+				WantedBy=multi-user.target
+				------------------------------------------
+	|
+	|->reload the daemon => systemctl daemon-reload
+	|
+	|->to start this service automatically => systemctl enable fileA.service
+	|
+	|->to start => systemctl start fileA.service
+	|->to check the status => systemctl status fileA.service 
+
+	|->edit fileA.conf file
+		...
+	|
+	|-->systemctl restart fileA.service
+		      --------
+
+	|-->systemctl stop fileA.service 
+
+				
+Linux - Process
+
+ User process				System process
+----------------			----------------
+ |						|
+by user						by systemD (PID:1)		
+TTY:pts/<port>					|
+pts/1 pts/2 					TTY: ? 
+|						|
+parent is working shell				parent is:systemD (PID:1)
+						..
+						
+
+STEP 1: write shell script - always active state (infinite loop)
+				
+	while :
+        do
+		<code block> - always active  >>external_log_file
+	done				
+
+|
+STEP 2: create a own service file => /etc/systemd/system/filename.service 
+		
+		[Unit]
+		
+		[Service]
+		ExecStart=<scriptfile>
+		[Install]
+		WantedBy=multi-user.target
+	
+|
+STEP 3: reload a daemon => systemctl daemon-reload
+|
+STEP 4: to start automatically => systemctl enable file.service
+|					    disable
+STEP 5: Test => systemctl start file.service  
+		systemctl status file.service
+		systemctl stop file.service
+=====================================================================================
+
+ 
+[root@krosumlabs ~]# uptime
+ 16:21:37 up  7:10,  3 users,  load average: 0.00, 0.03, 0.05
+[root@krosumlabs ~]#
+[root@krosumlabs ~]# uptimee
+-bash: uptimee: command not found
+[root@krosumlabs ~]#
+[root@krosumlabs ~]# uptimee >/dev/null 2>&1
+[root@krosumlabs ~]# uptime >/dev/null 2>&1
+[root@krosumlabs ~]#
+[root@krosumlabs ~]# uptimee >/dev/null 2>&1
+[root@krosumlabs ~]#
+[root@krosumlabs ~]# echo $?
+127
+[root@krosumlabs ~]# uptime >/dev/null 2>&1
+[root@krosumlabs ~]# echo $?
+0
+#####################################################################################
+lsmod - list of loaded kernel modules
+------
+ |->kernel object file (ex: device drivers)
+
+/etc/sysconfig/modules/p1.sh
+			|
+			modprobe <moduleName>
+			|
+			chmod a+x p1.sh
+------------------------------------------//OL[56] - grub loader
+
+OL[789] - grub2 bootloader
+		|
+		configuration are shell script
+		insmod <module>
+		....
+#######################################################################################
+crontab
+----------
+*  *  *
+/ - step value
+
+*/2 */2  */2
+|    |    |_______every 2 months
+|    every 2hrs
+every 2mts
+
+9AM to 6PM ->  0  09-18
+--------       |  ------//Hour
+
+*
+/
+-
+
+9AM and 6PM => 0  09,18
+
+*
+/
+-
+,
+----
+
+@daily
+@yearly
+@monthly
+@reboot 
+@hourly
+-------------------------------------------------------
+
+vi p1.sh
+---------------------------------------------
+read -p "Enter an IP:" IP
+read -p "Enter a count:" count
+
+ping -c $count $IP >>/var/log/ping.log
+--------------------------------------------
+chmod a+x p1.sh
+
+
+-------------------
+00 23 * * *  p1.sh 
+----------------------
+
+
+
+crond -->bash -->p1.sh
+		-------
+		Enter an IP:
+
+crontab -l
+
+vi p2.sh
+---------------------------------------------
+ping -c $1 $2 >>/var/log/ping.log
+--------------------------------------------
+chmod a+x p2.sh
+
+-------------------
+00 23 * * *  /home/userA/p2.sh 3 127.0.0.1
+----------------------
+crond -->bash -->p2.sh
+		-------
+#######################################################################################
+URLs
+-----
+https://www.shellscript.sh/
+https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/8/html/managing_file_systems/overview-of-available-file-systems_managing-file-systems
+https://www.linuxfoundation.org/blog/blog/classic-sysadmin-the-linux-filesystem-explained
+
+#######################################################################################
+
